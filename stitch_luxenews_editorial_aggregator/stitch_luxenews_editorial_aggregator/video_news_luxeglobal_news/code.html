@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LuxeGlobal | Video News</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-fixed-variant": "#920028",
+                    "on-primary-fixed": "#40000c",
+                    "on-secondary-fixed-variant": "#003ea8",
+                    "surface-variant": "#e0e3e5",
+                    "on-surface-variant": "#5c3f40",
+                    "surface": "#f7f9fb",
+                    "on-tertiary-container": "#fcfaff",
+                    "primary-container": "#e11d48",
+                    "inverse-primary": "#ffb3b6",
+                    "on-tertiary": "#ffffff",
+                    "inverse-on-surface": "#eff1f3",
+                    "surface-container-highest": "#e0e3e5",
+                    "on-tertiary-fixed-variant": "#3f465c",
+                    "surface-dim": "#d8dadc",
+                    "on-secondary-container": "#fefcff",
+                    "on-surface": "#191c1e",
+                    "on-tertiary-fixed": "#131b2e",
+                    "secondary": "#0051d5",
+                    "inverse-surface": "#2d3133",
+                    "tertiary": "#535b71",
+                    "on-primary-container": "#fffaf9",
+                    "surface-container-low": "#f2f4f6",
+                    "secondary-container": "#316bf3",
+                    "tertiary-fixed-dim": "#bec6e0",
+                    "primary": "#b80035",
+                    "surface-container-high": "#e6e8ea",
+                    "tertiary-container": "#6c738a",
+                    "on-primary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "on-background": "#191c1e",
+                    "primary-fixed-dim": "#ffb3b6",
+                    "surface-container-lowest": "#ffffff",
+                    "outline-variant": "#e5bdbe",
+                    "outline": "#906f70",
+                    "error": "#ba1a1a",
+                    "on-secondary": "#ffffff",
+                    "background": "#f7f9fb",
+                    "surface-bright": "#f7f9fb",
+                    "secondary-fixed": "#dbe1ff",
+                    "on-secondary-fixed": "#00174b",
+                    "surface-container": "#eceef0",
+                    "primary-fixed": "#ffdada",
+                    "secondary-fixed-dim": "#b4c5ff",
+                    "error-container": "#ffdad6",
+                    "on-error": "#ffffff",
+                    "surface-tint": "#be0037",
+                    "tertiary-fixed": "#dae2fd"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-mobile": "16px",
+                    "stack-lg": "32px",
+                    "sidebar-width": "280px",
+                    "gutter": "24px",
+                    "stack-sm": "8px",
+                    "margin-desktop": "48px",
+                    "container-max": "1440px",
+                    "stack-md": "16px"
+            },
+            "fontFamily": {
+                    "label-caps": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "metadata": ["Inter"],
+                    "display-hero": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "metadata": ["13px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                    "display-hero": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "800"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "headline-md": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .video-gradient-overlay {
+            background: linear-gradient(0deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 50%);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl border-b border-outline-variant/30 shadow-md">
+<div class="flex justify-between items-center px-4 md:px-margin-desktop h-16 w-full max-w-container-max mx-auto">
+<div class="flex items-center gap-stack-md">
+<span class="font-display-hero text-headline-md font-extrabold tracking-tight text-primary">LuxeGlobal</span>
+<div class="hidden md:flex items-center ml-stack-lg gap-6">
+<a class="text-on-surface-variant hover:bg-surface-container-low transition-all px-2 py-1 rounded" href="#">News</a>
+<a class="text-primary font-bold border-b-2 border-primary px-2 py-1" href="#">Video</a>
+<a class="text-on-surface-variant hover:bg-surface-container-low transition-all px-2 py-1 rounded" href="#">Markets</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden sm:flex bg-surface-container px-3 py-1.5 rounded-full items-center gap-2 border border-outline-variant/20">
+<span class="material-symbols-outlined text-[18px]">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-metadata w-40" placeholder="Search videos..." type="text"/>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer transition-colors" data-icon="partly_sunny">early_on</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer transition-colors" data-icon="notifications">notifications</span>
+<div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center border border-outline-variant overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a sophisticated news editor in a light-mode studio environment. The lighting is crisp and airy, following a minimalist high-end aesthetic with soft neutral tones. The individual has a confident yet approachable expression, representing the LuxeGlobal brand's authoritative and contemporary personality." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUL3eK-o6uhf3Mrmtr_Mw-U25shQpcA1ECzO1v3MMha8IIa6tUFGmiTWwm30EaGXrrNLFiH1qQm1GQXUSR2ODWD89KYc8nEXohKw4xjyLGccup052iRQDSkeXQsxvGYzQx73FVKY-xqFoT6L6IlqCjAvhpERAF3-hhbRkjPykOBIXKi32jdShANg5mDaznr2faaSz0fUIAbICkJspT0XC4S2lSvNZUQkEQKj7vvWWMlQEBHYkd10sMprHy7m70lm4ggvcAkzqf4tQ"/>
+</div>
+</div>
+</div>
+</div>
+</nav>
+<!-- SideNavBar (Desktop Only) -->
+<aside class="fixed left-0 top-16 h-full w-sidebar-width overflow-y-auto hidden lg:block bg-surface border-r border-outline-variant/20 py-stack-md">
+<div class="px-6 mb-6">
+<h3 class="font-headline-md text-headline-md text-on-surface">Verticals</h3>
+<p class="font-metadata text-metadata text-on-surface-variant">Curated Excellence</p>
+</div>
+<nav class="space-y-1">
+<a class="text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 px-6 py-3 flex items-center gap-3 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-caps text-label-caps">Home</span>
+</a>
+<a class="bg-primary-fixed text-on-primary-fixed-variant border-l-4 border-primary px-6 py-3 flex items-center gap-3 translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="live_tv" style="font-variation-settings: 'FILL' 1;">live_tv</span>
+<span class="font-label-caps text-label-caps">Live News</span>
+</a>
+<a class="text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 px-6 py-3 flex items-center gap-3 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="memory">memory</span>
+<span class="font-label-caps text-label-caps">Technology</span>
+</a>
+<a class="text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 px-6 py-3 flex items-center gap-3 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="psychology">psychology</span>
+<span class="font-label-caps text-label-caps">Artificial Intelligence</span>
+</a>
+<a class="text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 px-6 py-3 flex items-center gap-3 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="trending_up">trending_up</span>
+<span class="font-label-caps text-label-caps">Business</span>
+</a>
+<a class="text-on-surface-variant hover:bg-surface-container-high transition-colors duration-200 px-6 py-3 flex items-center gap-3 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="auto_awesome">auto_awesome</span>
+<span class="font-label-caps text-label-caps">Lifestyle</span>
+</a>
+</nav>
+<div class="mt-stack-lg px-6">
+<button class="w-full bg-secondary-container text-on-secondary-container py-3 rounded-xl font-label-caps text-label-caps shadow-md hover:opacity-90 transition-all">Subscribe Premium</button>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="lg:ml-sidebar-width pt-16 pb-24 lg:pb-0 min-h-screen">
+<div class="max-w-container-max mx-auto px-4 md:px-margin-desktop py-stack-lg">
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-gutter">
+<!-- Left Content Column -->
+<div class="xl:col-span-9 space-y-stack-lg">
+<!-- Hero Video Player -->
+<section class="relative group rounded-3xl overflow-hidden shadow-xl aspect-video bg-inverse-surface cursor-pointer">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="A high-definition editorial video still capturing a futuristic city skyline at twilight with neon pink and deep blue lighting. The scene is cinematic and sophisticated, showcasing a blend of advanced technology and luxury architecture. Soft fog rolls through the streets below as high-speed transport lines glow with vibrant energy streaks." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBhpVisySg15i5Ni9anivkM6VbCKzYRnPVL8zY2UOE2l4BEyVShtGbLU8KBjA5leh-R96bzr9GkKmNBQOVEMo3LiBHsFMTI5I9qr0IBTTJg0dJsQ2rVGmPMcYk-m6LMMH4uVbtO9AjggD6ULoEvP1Eixr3mvKiT1V_veumq64t2jJ1IZlat5lsmOKFSGra7OXf6Jlb2eijUZIoAsjwha9IcsVvRFPFAt3CiYNIJTxUwHpZaGicqvcpiVrINlDT1C-lQbGqCqeVkd7I')"></div>
+<div class="absolute inset-0 video-gradient-overlay"></div>
+<!-- Play Overlay -->
+<div class="absolute inset-0 flex items-center justify-center">
+<div class="w-20 h-20 md:w-24 md:h-24 bg-primary rounded-full flex items-center justify-center text-on-primary shadow-2xl transition-all duration-300 group-hover:scale-110 active:scale-95 group-hover:bg-primary-container">
+<span class="material-symbols-outlined text-4xl md:text-5xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<!-- Info Overlay -->
+<div class="absolute bottom-0 left-0 w-full p-6 md:p-10 space-y-3">
+<div class="flex items-center gap-3">
+<span class="px-3 py-1 bg-primary text-on-primary font-label-caps text-[10px] rounded-full uppercase tracking-widest">Live Now</span>
+<span class="font-metadata text-metadata text-white/80">42K Watching</span>
+</div>
+<h1 class="font-display-hero text-headline-lg-mobile md:text-headline-lg text-white max-w-2xl">The Global Shift: How AI is Redefining Urban Infrastructure by 2030</h1>
+</div>
+</section>
+<!-- Latest Videos Carousel -->
+<section>
+<div class="flex items-center justify-between mb-stack-md">
+<h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="schedule">schedule</span>
+                                Latest Videos
+                            </h2>
+<div class="flex gap-2">
+<button class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center hover:bg-surface-container transition-colors"><span class="material-symbols-outlined">chevron_left</span></button>
+<button class="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center hover:bg-surface-container transition-colors"><span class="material-symbols-outlined">chevron_right</span></button>
+</div>
+</div>
+<div class="flex gap-stack-md overflow-x-auto hide-scrollbar pb-4 snap-x">
+<!-- Video Item 1 -->
+<div class="min-w-[280px] snap-start group cursor-pointer">
+<div class="relative rounded-2xl overflow-hidden aspect-video bg-surface-container mb-3 shadow-md">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A close-up shot of a sleek, white electric vehicle charging at a minimalist charging station. The lighting is soft and natural, reflecting the light-mode editorial aesthetic of LuxeGlobal. Reflections of the surrounding modern architecture are visible on the car's polished surface. The color palette is dominated by whites, light greys, and a touch of primary red on the charging port light." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCco83dAPANpxU6ToZDb_ZfKMcuTIJWgWQwC1fEkJ0oQIogGHzPXsDf8QJAwEuBPGIbW5OlBqaA8_S9y1FDoM9YjdO4jj3mjtNCHTVm-2griNymRmyUkM3kvFb5uW5fHQvnXsBaUFhlENHEwHuRrowHAe6zapSIQ0SLK4RcBEAV5gnaKq0JtKevKdoFORxP-vcmj2dQ7c7fSjlpRxZbz6ZKg5H4oBHgPEbOP-pnJk9IQeoOkCvyDH3Ojb2HRvpWAJuYA7du7MV1yAc"/>
+<span class="absolute bottom-2 right-2 bg-black/70 text-white font-label-caps text-[10px] px-2 py-1 rounded">12:45</span>
+<div class="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-3xl" style="font-variation-settings: 'FILL' 1;">play_circle</span>
+</div>
+</div>
+<h3 class="font-headline-md text-body-md line-clamp-2 group-hover:text-primary transition-colors">Electric Mobility: The Next Frontier for Luxury Auto Manufacturers</h3>
+<div class="flex items-center gap-2 mt-2 text-on-surface-variant font-metadata text-[11px]">
+<span>2.4M views</span>
+<span>•</span>
+<span>2 hours ago</span>
+</div>
+</div>
+<!-- Video Item 2 -->
+<div class="min-w-[280px] snap-start group cursor-pointer">
+<div class="relative rounded-2xl overflow-hidden aspect-video bg-surface-container mb-3 shadow-md">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="An interior shot of a luxurious, light-filled penthouse apartment with floor-to-ceiling windows overlooking a serene garden. The furniture is minimalist and elegant, featuring high-quality fabrics in neutral tones. The lighting is warm and inviting, highlighting the sophisticated lifestyle focus of LuxeGlobal. A touch of emerald green from indoor plants adds a refreshing contrast." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDQ82AV3v92p9bMradWJzeEhvJ5UFW10-JQiTH07KURYQ8ONMJrEDNoKHbuuydRrxreLT65oNV1TeKUHuoRB6CXCZSNVAPNOTENSpmuRf7PR0bdLq7Pr5YzJkVBKqSQp3ttVpGQcV1UscG8CKxJeKcwAJc61hBiVnClnqJuQ4SAncrdE6e0GwicNeS6yqkLA2GgaPMIqua05RFvlQKyiuNm9zNy_AFnll8b4wMph6Oa2z7cXJW-6RWg6CrL-HtXzVuk0OgLt8e3l1c"/>
+<span class="absolute bottom-2 right-2 bg-black/70 text-white font-label-caps text-[10px] px-2 py-1 rounded">08:20</span>
+<div class="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-3xl" style="font-variation-settings: 'FILL' 1;">play_circle</span>
+</div>
+</div>
+<h3 class="font-headline-md text-body-md line-clamp-2 group-hover:text-primary transition-colors">Sustainable Opulence: Why Eco-Luxury is Dominating Interior Design</h3>
+<div class="flex items-center gap-2 mt-2 text-on-surface-variant font-metadata text-[11px]">
+<span>840K views</span>
+<span>•</span>
+<span>5 hours ago</span>
+</div>
+</div>
+<!-- Video Item 3 -->
+<div class="min-w-[280px] snap-start group cursor-pointer">
+<div class="relative rounded-2xl overflow-hidden aspect-video bg-surface-container mb-3 shadow-md">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A stylized digital representation of a neural network glowing in a soft palette of secondary blue and primary pink. The background is a clean, off-white surface, maintaining the elevated minimalism of the brand. The nodes of the network are sharp and detailed, pulsing with subtle light to represent active processing and intelligence. The overall mood is sophisticated and future-oriented." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBLagWLudJ2juXuNAWJvCNfN2SDhe9op1hZpRHcTWN0jLpF4YUXc-c3UPxabF-oDxxosBq0u4LUsJCGcljB_I4m4mYe-422czPluAi8u4oEA7Ble3LqwnK0J5DxcbuHHOdyxpouDgC4Q5rnzhvwiSX0UwSmiC90JMC_kigKJcSNCP3qJMmLttX-EDyizDDoaQJgbKB3k-0JGrAnHom-lliQfwbQdmsCJ3ks8iZRzWvD6EC5gPXIwHXdh7T7m0zKv597QWFeHJHPSNs"/>
+<span class="absolute bottom-2 right-2 bg-black/70 text-white font-label-caps text-[10px] px-2 py-1 rounded">15:10</span>
+<div class="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-3xl" style="font-variation-settings: 'FILL' 1;">play_circle</span>
+</div>
+</div>
+<h3 class="font-headline-md text-body-md line-clamp-2 group-hover:text-primary transition-colors">Beyond the Hype: Practical AI Applications in Modern Finance</h3>
+<div class="flex items-center gap-2 mt-2 text-on-surface-variant font-metadata text-[11px]">
+<span>1.1M views</span>
+<span>•</span>
+<span>1 day ago</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Bento Grid Content - AI & Tech Section -->
+<section>
+<div class="flex items-center justify-between mb-stack-md">
+<h2 class="font-headline-md text-headline-md text-on-surface">Intelligence & Tech</h2>
+<a class="text-primary font-label-caps text-label-caps hover:underline" href="#">See All</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Large Featured -->
+<div class="md:col-span-2 relative group rounded-3xl overflow-hidden h-[400px] shadow-lg cursor-pointer">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="A high-tech laboratory setting where a robotic arm is delicately handling a translucent microchip. The environment is sterile and bright, filled with soft blue and white light. The image emphasizes precision and advanced engineering, aligning with LuxeGlobal's tech-forward editorial focus. The depth of field is shallow, drawing attention to the intricate details of the chip." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnoa75wuDXLh7IQEz6tDHl1ZtX6QGDBIjzFSyc1CP_h-uTbRLTDMHhohYbu9JaVvtT5_FJlcqaA5j3NyS9b608XhWeCthIUK8Tp-7EuYXZd1BoJEmwyu1Q9FomupAy_7vOaPjgWS33Tcc2oJAoBPEklpni0xxoLzCSYE7Kn09V63Dy-oZyc3lVJROzKZUlQVlJEAe1EJBMQH4lrTWsMcQ-2dA16EFc8doGycm2-dKfOh6UmYup0ORLT-mIvJ8AipO7yaYvfkZMPkA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent"></div>
+<div class="absolute bottom-0 left-0 p-8">
+<span class="font-label-caps text-[10px] bg-secondary text-white px-2 py-1 rounded mb-4 inline-block">Deep Dive</span>
+<h3 class="font-headline-lg text-headline-lg-mobile md:text-headline-md text-white">Quantum Computing: The Dawn of the Multi-Trillion Dollar Race</h3>
+<div class="flex items-center gap-4 mt-4">
+<div class="flex items-center gap-1 text-white/70 font-metadata text-metadata">
+<span class="material-symbols-outlined text-[16px]">visibility</span>
+<span>342K</span>
+</div>
+<div class="flex items-center gap-1 text-white/70 font-metadata text-metadata">
+<span class="material-symbols-outlined text-[16px]">thumb_up</span>
+<span>12K</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Side Stack -->
+<div class="space-y-6">
+<div class="glass-card p-4 rounded-3xl shadow-md border-outline-variant/30 group cursor-pointer hover:-translate-y-1 transition-all">
+<div class="relative rounded-2xl overflow-hidden aspect-video mb-3">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A sleek, modern smartphone held in a hand, displaying an intricate augmented reality map over a real-world street scene. The image is bright and colorful, with the AR elements glowing in vibrant neon tones. The street background is a high-end shopping district, reflecting a premium lifestyle context. The overall visual style is crisp and technically sophisticated." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMJ9PzJGSdJHwsCV7UrKqhNGZc4ZFq5LNfv7bBsiqlf_48IOzVlVc5k7Lfn0wYdy7z2wz7OjEfw-u0OdGeOmNA40Sud-IoLD3ZhPujyepf5Y4hYeR_DZbIwjpiospnktzUc7C39Mat58AKYxeNK7ZjXFcdmOXbne1X8hmx9Zg1UOXb8zkOIDrmSeMUfS3mOH_Oner56r3HcnD5nWLfMNUjsHp9exnvuwL3aZpBx4zMauq5HWfV_rH4VvUsL41Ef1hhakSQfElBGdY"/>
+</div>
+<h4 class="font-headline-md text-body-md line-clamp-2">Spatial Web: How AR is Changing Retail</h4>
+<p class="font-metadata text-metadata text-on-surface-variant mt-2">12:15 • 89K views</p>
+</div>
+<div class="glass-card p-4 rounded-3xl shadow-md border-outline-variant/30 group cursor-pointer hover:-translate-y-1 transition-all">
+<div class="relative rounded-2xl overflow-hidden aspect-video mb-3">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A portrait of a diverse team of software engineers working in a collaborative, open-plan office space. The office features modern industrial design with plenty of glass, natural wood, and bright lighting. The atmosphere is energetic and focused. The color palette is clean and modern, consistent with the LuxeGlobal light-mode aesthetic, featuring soft grey and primary red accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLYih7qA7xqbW2QStTuBHH5e66vuF2hFUn5xKm2_0fMR0LW6BbF45uWpphqRsBJ0NvHmyncJW8S4hQx3b91LHIyWm9w9FCerYUSc8XwPWwIx0KsI6t86-r2sj_z0BfRwBcT4TX30TwXWUgAQMOMZlQ9kbYB0643aFujXbW0bjFT4BYhwVXB1GcpNil6lKamqVZU1JAJpw2dDS5_ok5mbkg52PS7_vpE1GSTfc0GmzZ1jMYpJaGyDaQwZrprA74tlIhQ7QRVnRlYek"/>
+</div>
+<h4 class="font-headline-md text-body-md line-clamp-2">The Talent War: Silicon Valley's Next Move</h4>
+<p class="font-metadata text-metadata text-on-surface-variant mt-2">09:40 • 156K views</p>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Sidebar Content Column -->
+<aside class="xl:col-span-3 space-y-stack-lg">
+<!-- Trending Hashtags -->
+<div class="bg-surface rounded-3xl border border-outline-variant/20 p-6 shadow-sm">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-stack-md flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">trending_up</span>
+                            Trending Now
+                        </h3>
+<div class="space-y-4">
+<a class="flex items-center justify-between group" href="#">
+<div>
+<p class="font-label-caps text-label-caps text-primary">#FutureOfWork</p>
+<p class="font-metadata text-metadata text-on-surface-variant">12.5K videos</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">chevron_right</span>
+</a>
+<div class="h-px bg-outline-variant/20"></div>
+<a class="flex items-center justify-between group" href="#">
+<div>
+<p class="font-label-caps text-label-caps text-on-surface">#SustainableEnergy</p>
+<p class="font-metadata text-metadata text-on-surface-variant">8.2K videos</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">chevron_right</span>
+</a>
+<div class="h-px bg-outline-variant/20"></div>
+<a class="flex items-center justify-between group" href="#">
+<div>
+<p class="font-label-caps text-label-caps text-on-surface">#AIGovernance</p>
+<p class="font-metadata text-metadata text-on-surface-variant">21.9K videos</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">chevron_right</span>
+</a>
+<div class="h-px bg-outline-variant/20"></div>
+<a class="flex items-center justify-between group" href="#">
+<div>
+<p class="font-label-caps text-label-caps text-on-surface">#LuxuryTravel</p>
+<p class="font-metadata text-metadata text-on-surface-variant">4.1K videos</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">chevron_right</span>
+</a>
+</div>
+</div>
+<!-- AI Recommendation Widget -->
+<div class="relative rounded-3xl overflow-hidden p-[2px] bg-gradient-to-br from-secondary to-primary shadow-lg">
+<div class="bg-surface rounded-[calc(1.5rem-2px)] p-6">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<span class="font-label-caps text-label-caps text-on-surface">AI FOR YOU</span>
+</div>
+<p class="font-body-md text-on-surface-variant mb-6">Based on your interest in <span class="font-bold text-primary">Urban Tech</span>, we recommend this playlist.</p>
+<div class="space-y-4">
+<div class="flex gap-3 items-start group cursor-pointer">
+<div class="w-20 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A minimalist architectural photograph of a sleek, white spiral staircase in a modern museum. The lighting is diffused and soft, creating subtle shadows and highlights on the curved surfaces. The overall aesthetic is one of quiet elegance and structural beauty, consistent with LuxeGlobal's premium design philosophy. The color palette is near-monochrome with soft warm white tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFbrJSP0UQPWQ83NcwvreKX67tSBwHnCEFj9g1cpcjC6saycGX416iABfl9Tp-vmTlsiq1w9WncxphiCYWJiAl9K_N7Prm7Qm6CYy5QE-VMbSa70J1kZw8NA8tNKXJS6mXoH8_9M06i_JoZ3zvkIqQi-6UEkIWMXRo7ya3kN5yCTXu8zjslJA8JVuwHXli1pmQiTUswjvG2KvRjlpNVJzFkO1zSDbnuRQQm61nbn_P347dpmCILnz82yu9zc4gl8fdUkvTtDLrGmY"/>
+</div>
+<h5 class="font-metadata text-[13px] line-clamp-2 group-hover:text-primary transition-colors">Top 10 Smart Cities to Watch in 2025</h5>
+</div>
+<div class="flex gap-3 items-start group cursor-pointer">
+<div class="w-20 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A clean, top-down view of a designer workspace featuring a slim laptop, a white notebook, and a single cup of artisanal coffee. The desk surface is a light-colored wood with a fine grain. The lighting is bright and natural, coming from a large window off-camera. The composition is balanced and serene, representing the sophisticated lifestyle and focus of the LuxeGlobal reader." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDebMiZzeWLkLSSf44WXWozL89IJRJbbip2NmQ2e_8J81Op-Nun0xhGX4cIZ0UoR-TYBYsGF3X-_QftWbOzxdV9kVjYohx4TQtv2m6jw6n0gyEddbb6e2oq-UTDNq6C-VQLKYZSUNPwi0vPmnOfO4LEp4dbZYzrV8HSamgtu-A3JX_r1k5TsSJE5eP-da6O0XoWHEFXl3bgygNHx6aTyhfsnerSoXo-AP5lPhGPPdtcSWM05WsSHGCTOgK7hQT2zgM88da35_N_7aA"/>
+</div>
+<h5 class="font-metadata text-[13px] line-clamp-2 group-hover:text-primary transition-colors">Architecture for the Hybrid Era</h5>
+</div>
+</div>
+<button class="w-full mt-6 py-2 bg-surface-container hover:bg-surface-container-high transition-colors rounded-xl font-label-caps text-label-caps">View Full Playlist</button>
+</div>
+</div>
+<!-- Market/Crypto Widget -->
+<div class="glass-card rounded-3xl p-6 shadow-sm border-outline-variant/30">
+<div class="flex items-center justify-between mb-4">
+<h3 class="font-label-caps text-label-caps">Live Market Feed</h3>
+<span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+</div>
+<div class="space-y-4">
+<div class="flex items-center justify-between">
+<span class="font-metadata text-metadata">BTC / USD</span>
+<div class="text-right">
+<p class="font-bold text-on-surface">64,281.40</p>
+<p class="text-green-600 text-[11px] font-bold">+2.4%</p>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-metadata text-metadata">ETH / USD</span>
+<div class="text-right">
+<p class="font-bold text-on-surface">3,492.15</p>
+<p class="text-red-500 text-[11px] font-bold">-0.8%</p>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<span class="font-metadata text-metadata">NASDAQ</span>
+<div class="text-right">
+<p class="font-bold text-on-surface">16,428.52</p>
+<p class="text-green-600 text-[11px] font-bold">+1.2%</p>
+</div>
+</div>
+</div>
+</div>
+</aside>
+</div>
+<!-- Lifestyle Grid Section -->
+<section class="mt-stack-lg border-t border-outline-variant/20 pt-stack-lg">
+<div class="flex items-center justify-between mb-stack-md">
+<h2 class="font-headline-md text-headline-md text-on-surface">Elevated Lifestyle</h2>
+<a class="text-primary font-label-caps text-label-caps hover:underline" href="#">Explore All</a>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-gutter">
+<!-- Video Card 1 -->
+<div class="group cursor-pointer">
+<div class="relative rounded-2xl overflow-hidden aspect-video bg-surface-container mb-3 shadow-md">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A vibrant culinary shot of a high-end dish being plated by a professional chef. The lighting is focused and dramatic, highlighting the textures and rich colors of the fresh ingredients. The background is a blurred, high-gloss kitchen environment. The overall feel is one of luxury, expertise, and passion for the culinary arts, consistent with LuxeGlobal's lifestyle coverage." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAh4hwIjBEOlB0WnppXL27AWGZobw7tn4Ljx0I3LQLVTQXB0wL5CqzisTqBjad0vsDOClUPzg2LOeHsZ23UYRXpI3eh6YthaADVtcpIsoUR4C3dN4liihMcmg_b7bk719nHOcfVp81qyDDFOEghgFWwZZOJZ3fNSy72O6-P5dc91iN5N7dcZMX98y8JW8hSmj4NBGjraiPvo6zuatwiRBDuP5Lmb4EaL0xdZcJA9QnWQFBktaRsRFLLJvJgZj4cQZ5nIyFQRwmWpW4"/>
+<span class="absolute bottom-2 right-2 bg-black/70 text-white font-label-caps text-[10px] px-2 py-1 rounded">06:12</span>
+</div>
+<h4 class="font-headline-md text-body-md line-clamp-2">Michelin 2024: The Rise of Molecular Gastronomy</h4>
+<div class="flex items-center gap-2 mt-2 text-on-surface-variant font-metadata text-[11px]">
+<span>42K views</span>
+<span>•</span>
+<span>3 days ago</span>
+</div>
+</div>
+<!-- Video Card 2 -->
+<div class="group cursor-pointer">
+<div class="relative rounded-2xl overflow-hidden aspect-video bg-surface-container mb-3 shadow-md">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A serene, wide-angle shot of a luxury spa retreat nestled in a lush, tropical landscape. The architecture is modern and open, seamlessly integrating with the surrounding nature. The lighting is the golden hour, casting a warm and tranquil glow over the entire scene. The image evokes a sense of extreme relaxation and wellness, fitting the high-end editorial context of the brand." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBa4Yxy8-9RwzqG6jZIq5Fn1_QvadOmSL10smqc_qkpCfOka7XbJt7auHwOKxx0xYygjf8DiwP9obFYoWs44macvP3YWpe65pVWsyzK5jZiaF_9dMh7pnMhXb0c2D2l6ha5TGjRA7Rgc2B0BPGRTKERCVWjC3Foe4foFayo3_skuoIw0lfnzWtH61wIkHqiLTm33-iI3dmqs5-K_QtWZ5FVUwPDC-Pv8zY2T3XVRRlr4yjz2xdmqx6LHbCjvJuYCOpc5F-cTQz2tGw"/>
+<span class="absolute bottom-2 right-2 bg-black/70 text-white font-label-caps text-[10px] px-2 py-1 rounded">04:45</span>
+</div>
+<h4 class="font-headline-md text-body-md line-clamp-2">The New Wellness: Bio-Hacking for Longevity</h4>
+<div class="flex items-center gap-2 mt-2 text-on-surface-variant font-metadata text-[11px]">
+<span>210K views</span>
+<span>•</span>
+<span>1 week ago</span>
+</div>
+</div>
+<!-- Video Card 3 -->
+<div class="group cursor-pointer">
+<div class="relative rounded-2xl overflow-hidden aspect-video bg-surface-container mb-3 shadow-md">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A fashion-forward shot from a high-end runway show, featuring a model in an avant-garde outfit. The lighting is high-key and editorial, with sharp shadows and bright highlights that emphasize the fabric's texture and silhouette. The background is a minimalist, modern space. The color palette is sophisticated, using deep blacks and vibrant red accents to create a powerful visual impact." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4TGCc62HkHJtc6NXN0sKc2a_W6U5tO9XBjYFuLzrjtZM1SKM04ZX9ViBWTtX9rPAka4iSvLXo_Z7cK4zgmAr6GDlZypVoQAOxM3MQ9gSJD4F_MlGcJRR-H-DMbCyoFysMhvcs7w-0HO63qrEdGHdauCUElK7uXBQ1ch_KR1mqKzqsLOqoQ3ATGuRU_bwZvR-VKQrihuQNhbVJyhJJpND6lRYt0NJ6ERsk6L0Tnb410KC73u--w3asuhDVQCM-bzh9uYQvY4z-sS0"/>
+<span class="absolute bottom-2 right-2 bg-black/70 text-white font-label-caps text-[10px] px-2 py-1 rounded">09:30</span>
+</div>
+<h4 class="font-headline-md text-body-md line-clamp-2">Fashion Week 2024: Digital Couture Takes the Stage</h4>
+<div class="flex items-center gap-2 mt-2 text-on-surface-variant font-metadata text-[11px]">
+<span>56K views</span>
+<span>•</span>
+<span>2 days ago</span>
+</div>
+</div>
+<!-- Video Card 4 -->
+<div class="group cursor-pointer">
+<div class="relative rounded-2xl overflow-hidden aspect-video bg-surface-container mb-3 shadow-md">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="A sophisticated home library with floor-to-ceiling bookshelves and a large, comfortable leather armchair. A soft lamp provides warm, focused lighting on a small table holding a single book and a glass of wine. The room is elegant and peaceful, reflecting a high-end intellectual lifestyle. The style is classic yet contemporary, consistent with the LuxeGlobal brand personality." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCOx9UxH-woeDx5i4hc9RzCD5XCHNiawSXMPONss5XizfqvBfj10sw2fErjJE7wkrvGaKAblPVksq__IyLSWtB1QkNpglpp2CecEj9LncJC_UARYL7f6dO3QDNzGOVuiwV6VoAMFC_G_x5s9uJC3BNunPQk_0LlXVQsqTXHp1VbsMagJ17ef3HVi8tktBaj3ux-WvAeRZglYFxGJbbV5XLDJLgClogpwUDym-l_bZfWVTXdZKvEE2ssDvGZFbI4pgNZXPSSy-F3VGQ"/>
+<span class="absolute bottom-2 right-2 bg-black/70 text-white font-label-caps text-[10px] px-2 py-1 rounded">11:05</span>
+</div>
+<h4 class="font-headline-md text-body-md line-clamp-2">Curation as Art: The Private Library Renaissance</h4>
+<div class="flex items-center gap-2 mt-2 text-on-surface-variant font-metadata text-[11px]">
+<span>15K views</span>
+<span>•</span>
+<span>4 days ago</span>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Footer -->
+<footer class="w-full py-stack-lg border-t border-outline-variant bg-surface-container-lowest mt-stack-lg">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter px-4 md:px-margin-desktop max-w-container-max mx-auto">
+<div class="col-span-1 md:col-span-1">
+<span class="font-display-hero text-headline-md text-on-surface-variant">LuxeGlobal</span>
+<p class="mt-4 font-metadata text-metadata text-on-surface-variant">Defining the premium editorial standard for a high-velocity world.</p>
+</div>
+<div>
+<h5 class="font-label-caps text-label-caps text-on-surface mb-4">Company</h5>
+<ul class="space-y-2">
+<li><a class="font-metadata text-metadata text-on-surface-variant hover:text-primary transition-colors" href="#">About Us</a></li>
+<li><a class="font-metadata text-metadata text-on-surface-variant hover:text-primary transition-colors" href="#">Press</a></li>
+<li><a class="font-metadata text-metadata text-on-surface-variant hover:text-primary transition-colors" href="#">Contact</a></li>
+</ul>
+</div>
+<div>
+<h5 class="font-label-caps text-label-caps text-on-surface mb-4">Legal</h5>
+<ul class="space-y-2">
+<li><a class="font-metadata text-metadata text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a></li>
+<li><a class="font-metadata text-metadata text-on-surface-variant hover:text-primary transition-colors" href="#">Terms of Service</a></li>
+<li><a class="font-metadata text-metadata text-on-surface-variant hover:text-primary transition-colors" href="#">Ad Choices</a></li>
+</ul>
+</div>
+<div>
+<h5 class="font-label-caps text-label-caps text-on-surface mb-4">Newsletter</h5>
+<div class="flex gap-2">
+<input class="bg-surface-container-low border border-outline-variant/30 rounded-lg px-3 py-2 text-metadata w-full focus:ring-1 focus:ring-primary focus:border-primary" placeholder="Email address" type="email"/>
+<button class="bg-primary text-on-primary px-4 py-2 rounded-lg font-label-caps text-[10px]">Join</button>
+</div>
+</div>
+</div>
+<div class="mt-12 pt-8 border-t border-outline-variant/30 text-center">
+<p class="font-metadata text-metadata text-on-surface-variant">© 2024 LuxeGlobal Editorial. All rights reserved.</p>
+</div>
+</footer>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 w-full z-50 lg:hidden rounded-t-xl bg-surface/90 backdrop-blur-lg shadow-[0px_-4px_20px_rgba(0,0,0,0.05)] border-t border-outline-variant/30">
+<div class="flex justify-around items-center h-16 px-4 pb-safe">
+<a class="flex flex-col items-center justify-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="newspaper">newspaper</span>
+<span class="font-label-caps text-[10px] mt-1">Feed</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+<span class="font-label-caps text-[10px] mt-1">Search</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary font-bold" href="#">
+<span class="material-symbols-outlined" data-icon="live_tv" style="font-variation-settings: 'FILL' 1;">live_tv</span>
+<span class="font-label-caps text-[10px] mt-1">Live</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="bookmark">bookmark</span>
+<span class="font-label-caps text-[10px] mt-1">Saved</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-caps text-[10px] mt-1">Account</span>
+</a>
+</div>
+</nav>
+<script>
+        // Micro-interactions and effects
+        document.querySelectorAll('.group').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-4px)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0)';
+            });
+        });
+
+        // Sticky Nav opacity change on scroll
+        window.addEventListener('scroll', () => {
+            const nav = document.querySelector('nav');
+            if (window.scrollY > 20) {
+                nav.classList.add('shadow-lg');
+            } else {
+                nav.classList.remove('shadow-lg');
+            }
+        });
+    </script>
+</body></html>

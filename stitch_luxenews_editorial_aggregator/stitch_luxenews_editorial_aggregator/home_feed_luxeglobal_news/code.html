@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LuxeGlobal | Premium Editorial Intelligence</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .glass-nav {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .masonry-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-auto-rows: 10px;
+        }
+        .card-shadow {
+            box-shadow: 0px 4px 20px -2px rgba(0, 0, 0, 0.05);
+        }
+        .card-shadow:hover {
+            box-shadow: 0px 10px 30px -5px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed-variant": "#920028",
+                        "on-primary-fixed": "#40000c",
+                        "on-secondary-fixed-variant": "#003ea8",
+                        "surface-variant": "#e0e3e5",
+                        "on-surface-variant": "#5c3f40",
+                        "surface": "#f7f9fb",
+                        "on-tertiary-container": "#fcfaff",
+                        "primary-container": "#e11d48",
+                        "inverse-primary": "#ffb3b6",
+                        "on-tertiary": "#ffffff",
+                        "inverse-on-surface": "#eff1f3",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-tertiary-fixed-variant": "#3f465c",
+                        "surface-dim": "#d8dadc",
+                        "on-secondary-container": "#fefcff",
+                        "on-surface": "#191c1e",
+                        "on-tertiary-fixed": "#131b2e",
+                        "secondary": "#0051d5",
+                        "inverse-surface": "#2d3133",
+                        "tertiary": "#535b71",
+                        "on-primary-container": "#fffaf9",
+                        "surface-container-low": "#f2f4f6",
+                        "secondary-container": "#316bf3",
+                        "tertiary-fixed-dim": "#bec6e0",
+                        "primary": "#b80035",
+                        "surface-container-high": "#e6e8ea",
+                        "tertiary-container": "#6c738a",
+                        "on-primary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-background": "#191c1e",
+                        "primary-fixed-dim": "#ffb3b6",
+                        "surface-container-lowest": "#ffffff",
+                        "outline-variant": "#e5bdbe",
+                        "outline": "#906f70",
+                        "error": "#ba1a1a",
+                        "on-secondary": "#ffffff",
+                        "background": "#f7f9fb",
+                        "surface-bright": "#f7f9fb",
+                        "secondary-fixed": "#dbe1ff",
+                        "on-secondary-fixed": "#00174b",
+                        "surface-container": "#eceef0",
+                        "primary-fixed": "#ffdada",
+                        "secondary-fixed-dim": "#b4c5ff",
+                        "error-container": "#ffdad6",
+                        "on-error": "#ffffff",
+                        "surface-tint": "#be0037",
+                        "tertiary-fixed": "#dae2fd"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "stack-lg": "32px",
+                        "sidebar-width": "280px",
+                        "gutter": "24px",
+                        "stack-sm": "8px",
+                        "margin-desktop": "48px",
+                        "container-max": "1440px",
+                        "stack-md": "16px"
+                    },
+                    "fontFamily": {
+                        "label-caps": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "metadata": ["Inter"],
+                        "display-hero": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-caps": ["12px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "metadata": ["13px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                        "display-hero": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.04em", "fontWeight": "800"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                        "headline-md": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface font-body-md selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-surface/80 dark:bg-inverse-surface/80 backdrop-blur-xl border-b border-outline-variant/30 dark:border-outline/20 shadow-md dark:shadow-none h-16 flex items-center">
+<div class="flex justify-between items-center px-4 md:px-12 w-full max-w-[1440px] mx-auto">
+<div class="flex items-center gap-6">
+<span class="font-display-hero text-headline-md font-extrabold tracking-tight text-primary dark:text-primary-fixed leading-none">LuxeGlobal</span>
+<div class="hidden md:flex items-center bg-surface-container-low rounded-full px-4 py-2 gap-2 w-64 border border-outline-variant/20">
+<span class="material-symbols-outlined text-on-surface-variant text-sm">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-metadata w-full p-0" placeholder="Search insights..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden lg:flex items-center gap-6 mr-6">
+<a class="font-metadata text-primary border-b-2 border-primary font-bold" href="#">Latest</a>
+<a class="font-metadata text-on-surface-variant hover:text-primary transition-all" href="#">Trending</a>
+<a class="font-metadata text-on-surface-variant hover:text-primary transition-all" href="#">Analysis</a>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-full hover:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined text-on-surface-variant">early_on</span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-container-low transition-all relative">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full"></span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined text-on-surface-variant">language</span>
+</button>
+<div class="h-8 w-8 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant/30 ml-2">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a sophisticated business executive, clean lighting, soft background, high-end editorial photography style for a premium news application." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBeujVV-W2r4PvNQnF2TD4kOx0CsVazgGYoTwjmjJZ59VKCofWWjMtVeqCtlNRDj9tloaN3_svmNLj7hV2-qvV5egVY18Jjymu76WySg9zDYzJ5O0Dx62802cTRDdD9enumpahwkd9Ir7x3pkhlZ0q5XLcjoc4VHgkKYdHjo8Fr1hG-JDPmwnXUdOpd05hdYmsL-bkKnvgLibEsyC8_7AXAZ4isDYGrPJdW0QcJ4hi--fVWJhkW2sDGqbm7e5YKNsrP6LuY3Rx3EEs"/>
+</div>
+</div>
+</div>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-[280px] bg-surface dark:bg-on-background border-r border-outline-variant/20 hidden lg:flex flex-col py-4 overflow-y-auto no-scrollbar">
+<div class="px-6 mb-6">
+<span class="font-label-caps text-label-caps text-on-surface-variant opacity-60">VERTICALS</span>
+<p class="font-metadata text-metadata text-on-surface-variant">Curated Excellence</p>
+</div>
+<nav class="flex-1">
+<a class="bg-primary-fixed text-on-primary-fixed-variant border-l-4 border-primary px-6 py-3 flex items-center gap-3 font-label-caps text-label-caps transition-all transform hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+                Home
+            </a>
+<a class="text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high px-6 py-3 flex items-center gap-3 font-label-caps text-label-caps transition-all transform hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">location_on</span>
+                Local News
+            </a>
+<a class="text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high px-6 py-3 flex items-center gap-3 font-label-caps text-label-caps transition-all transform hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">flag</span>
+                National
+            </a>
+<a class="text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high px-6 py-3 flex items-center gap-3 font-label-caps text-label-caps transition-all transform hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">public</span>
+                International
+            </a>
+<a class="text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high px-6 py-3 flex items-center gap-3 font-label-caps text-label-caps transition-all transform hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">memory</span>
+                Technology
+            </a>
+<a class="text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high px-6 py-3 flex items-center gap-3 font-label-caps text-label-caps transition-all transform hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">psychology</span>
+                Artificial Intelligence
+            </a>
+<a class="text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high px-6 py-3 flex items-center gap-3 font-label-caps text-label-caps transition-all transform hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">trending_up</span>
+                Business
+            </a>
+<a class="text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high px-6 py-3 flex items-center gap-3 font-label-caps text-label-caps transition-all transform hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">auto_awesome</span>
+                Lifestyle
+            </a>
+</nav>
+<div class="px-6 py-6 border-t border-outline-variant/10">
+<button class="w-full py-3 bg-secondary text-on-secondary rounded-xl font-label-caps text-label-caps shadow-lg hover:brightness-110 transition-all">
+                Subscribe Premium
+            </button>
+</div>
+<div class="px-6 pt-4 flex flex-col gap-2">
+<a class="text-on-surface-variant hover:text-on-surface text-metadata flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-sm">settings</span> Settings
+            </a>
+<a class="text-on-surface-variant hover:text-on-surface text-metadata flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-sm">help</span> Help
+            </a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="lg:ml-[280px] mt-16 p-4 md:p-8 max-w-[1200px] mx-auto min-h-screen">
+<!-- Stock/Crypto Ticker Widget -->
+<section class="mb-8 bg-surface-container-lowest rounded-2xl p-1 border border-outline-variant/20 shadow-sm overflow-hidden flex items-center no-scrollbar overflow-x-auto whitespace-nowrap">
+<div class="flex items-center gap-8 px-6 py-3 animate-marquee">
+<div class="flex items-center gap-2">
+<span class="font-label-caps text-label-caps text-on-surface-variant">SENSEX</span>
+<span class="font-bold text-secondary">72,431.05</span>
+<span class="text-secondary text-[10px] flex items-center"><span class="material-symbols-outlined text-xs">trending_up</span> 0.45%</span>
+</div>
+<div class="w-px h-4 bg-outline-variant/30"></div>
+<div class="flex items-center gap-2">
+<span class="font-label-caps text-label-caps text-on-surface-variant">NIFTY 50</span>
+<span class="font-bold text-secondary">21,987.50</span>
+<span class="text-secondary text-[10px] flex items-center"><span class="material-symbols-outlined text-xs">trending_up</span> 0.32%</span>
+</div>
+<div class="w-px h-4 bg-outline-variant/30"></div>
+<div class="flex items-center gap-2">
+<span class="font-label-caps text-label-caps text-on-surface-variant">BTC/USD</span>
+<span class="font-bold text-primary">64,210.80</span>
+<span class="text-primary text-[10px] flex items-center"><span class="material-symbols-outlined text-xs">trending_down</span> 1.21%</span>
+</div>
+<div class="w-px h-4 bg-outline-variant/30"></div>
+<div class="flex items-center gap-2">
+<span class="font-label-caps text-label-caps text-on-surface-variant">ETH/USD</span>
+<span class="font-bold text-secondary">3,456.20</span>
+<span class="text-secondary text-[10px] flex items-center"><span class="material-symbols-outlined text-xs">trending_up</span> 2.15%</span>
+</div>
+<!-- Duplicate for marquee effect -->
+<div class="w-px h-4 bg-outline-variant/30"></div>
+<div class="flex items-center gap-2">
+<span class="font-label-caps text-label-caps text-on-surface-variant">NASDAQ</span>
+<span class="font-bold text-secondary">16,041.64</span>
+<span class="text-secondary text-[10px] flex items-center"><span class="material-symbols-outlined text-xs">trending_up</span> 0.82%</span>
+</div>
+</div>
+</section>
+<!-- Hero Section: Breaking News -->
+<section class="mb-10 group cursor-pointer relative overflow-hidden rounded-[18px] bg-white card-shadow transition-all duration-500 hover:-translate-y-1">
+<div class="grid grid-cols-1 lg:grid-cols-2">
+<div class="h-[300px] lg:h-[450px] relative overflow-hidden">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="A wide panoramic shot of a futuristic skyscraper with glowing lights during sunset. The architecture is avant-garde, glass and steel, against a purple and orange sky. High-contrast, premium architectural photography style for a lead news story." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDAUKVfyizNffRcS8znw9aBk4ZM1CiW_XyNKGJ0RokN5wOHnBtfnehbAvkbzD4VSouayJ_S-7QKdsmiEloCmd-3JucVGUHVz3RQRMzaTQwQSVKpw70vEMtF0BjWK3v9QPMHuaSv8RCCBwwalxtu7DWUKaSaD2XROCkkGeJaarvi8tklj3zjQKeMURYi3FwnQitK_3WsNGszSey_6pGB2hZXI4RxXVE24ZzoezOMgDbhc8rDd-2dP9oxAEMb155XoS4-j20cU5t9Pno"/>
+<div class="absolute top-4 left-4 bg-primary text-on-primary px-3 py-1 rounded-full flex items-center gap-1 font-label-caps text-label-caps shadow-lg">
+<span class="w-2 h-2 bg-white rounded-full animate-pulse"></span> BREAKING
+                    </div>
+</div>
+<div class="p-8 lg:p-12 flex flex-col justify-center">
+<span class="font-label-caps text-label-caps text-primary mb-4 tracking-widest">GLOBAL ECONOMY</span>
+<h1 class="font-headline-lg text-headline-lg mb-6 leading-tight group-hover:text-primary transition-colors">Digital Currencies: The Paradigm Shift in Central Banking and Global Sovereignty</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mb-8 line-clamp-3">As central banks worldwide accelerate their CBDC pilots, a new digital Iron Curtain might be descending. We analyze the implications for privacy, commerce, and the future of the dollar as the world's reserve currency.</p>
+<div class="flex items-center justify-between mt-auto pt-6 border-t border-outline-variant/20">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest overflow-hidden border border-outline-variant/30">
+<img class="w-full h-full object-cover" data-alt="Close up portrait of a senior financial analyst, intelligent expression, cinematic soft-focus background, sophisticated editorial style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmm6gNrqu2mZzUSFL130g0SKJbq9bW_baN8fYcsPoAUahbi7l5b0FBqPcLaSrCybF1YlJJNyYFL2gE1LjCIYHBhlVvY2SrXCJFxs-Rv29Bg2zzogC7r-c9iiwG3D_3Jz9rZcGhneR2rxdLaddB8T--1Ff98Kt88hELOkztq2zBb9XRTzSYDC65tUCamKW6TE4NDbJCG7p1rOjzoLFYXnjIJR-gpTfHVA78drkrHM2kKK61ZAe7Iqqz4efBQaqqRGDnl5paGv7OBpM"/>
+</div>
+<div>
+<p class="font-metadata text-metadata font-bold">Helena Vance</p>
+<p class="text-[11px] text-on-surface-variant">Senior Economic Correspondent</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center justify-center p-2 rounded-full hover:bg-surface-container-low transition-colors text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined">favorite</span>
+</button>
+<button class="flex items-center justify-center p-2 rounded-full hover:bg-surface-container-low transition-colors text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined">share</span>
+</button>
+<button class="flex items-center justify-center p-2 rounded-full hover:bg-surface-container-low transition-colors text-on-surface-variant hover:text-primary">
+<span class="material-symbols-outlined">bookmark</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Trending Section -->
+<section class="mb-12">
+<div class="flex items-center justify-between mb-6">
+<h2 class="font-headline-md text-headline-md flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">trending_up</span>
+                    Trending Insights
+                </h2>
+<a class="text-metadata text-primary font-bold hover:underline" href="#">View All Trends</a>
+</div>
+<div class="flex gap-6 overflow-x-auto no-scrollbar pb-4 -mx-4 px-4">
+<!-- Trending Cards -->
+<div class="min-w-[280px] bg-white rounded-[18px] p-3 card-shadow border border-outline-variant/10 group cursor-pointer transition-all hover:-translate-y-1">
+<div class="relative h-32 w-full rounded-xl overflow-hidden mb-3">
+<img class="w-full h-full object-cover" data-alt="A clean top-down shot of high-end consumer electronics like a sleek minimalist smartphone and laptop on a white marble desk. Soft natural lighting, premium technology aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCd9Z2PJceLqslRgD-h2PZxJitwHQKjBbAdGNjXN5EahyNsUh8MoN82vyPWAaQRB8K7g1wtg1AQypviJeBSHjRby07x7bUrfZ6eHCIynW2QqQTfLPOYrYYeOlefSr2KGFdC82po51MrDCi948Pre4IfJ7jcPv2DqJr2Aglt5ELpZ4amQ1FUKCuP_y8EqIYQFPTIMV2D0_VLmULx7t7pxTzz7iBjAQlsrZOEkZ6Q8B_nYWOsE1q9qAaCboHHQsrYPf32rRqUufBrpTk"/>
+</div>
+<span class="font-label-caps text-[10px] text-secondary mb-1 block">TECHNOLOGY</span>
+<h3 class="font-metadata text-body-md font-bold leading-tight group-hover:text-secondary transition-colors">The Silicon Valley Renaissance: Why hardware is the new software.</h3>
+</div>
+<div class="min-w-[280px] bg-white rounded-[18px] p-3 card-shadow border border-outline-variant/10 group cursor-pointer transition-all hover:-translate-y-1">
+<div class="relative h-32 w-full rounded-xl overflow-hidden mb-3">
+<img class="w-full h-full object-cover" data-alt="A vibrant shot of a vertical forest building in Milan, lush greenery against a blue sky, modern sustainable architecture. Soft afternoon sun." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAyC4WGRbts9b1nxCJo5enD03bvQHwy7rhEgNaoy_kTHyle1WoLkzmysxty8dz8W2DAm8N2-za8JczEdPZpWXCGCGeXS0wFWa100j2K900mK-YnWP-i0p3mSGbWRwxAQciPqOmofBEifzUYBPK4W3SeUFcYUpM_9UKiVbRaThjjiU0y9ItRsLHBQOo3pEQp-drR8K0h3HvoBP3S0eD2rn8e3spZajZZPQFqpywCzdBkHjJ42Yzgs75VZEl3k_Bi0YtYtSJa2cgZh6k"/>
+</div>
+<span class="font-label-caps text-[10px] text-secondary mb-1 block">SUSTAINABILITY</span>
+<h3 class="font-metadata text-body-md font-bold leading-tight group-hover:text-secondary transition-colors">Green Urbanism: Reimagining the concrete jungle as a sanctuary.</h3>
+</div>
+<div class="min-w-[280px] bg-white rounded-[18px] p-3 card-shadow border border-outline-variant/10 group cursor-pointer transition-all hover:-translate-y-1">
+<div class="relative h-32 w-full rounded-xl overflow-hidden mb-3">
+<img class="w-full h-full object-cover" data-alt="A sophisticated home office setup with designer furniture, warm ambient lighting, high-end interior design for a modern workspace." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAOK0AQKrEwG5MlLvhEferwR_cNq1xYfqoHzMOyjG6l2ypuXIz60W4JYWP6dPyOM8iiNbW-bTuLDHyOzqR1V_NFGIX44UcCs46i-Rjy8zL90sTGAKcTywYTRypPIZXXpxxfj1MedZlMgqZmpVdRY1-dBnmhexxNSDhoP7Vv6a2Sqb9Fui7udxzu9yFUI7FyRY3KhsyLrOm6Ssk4r8NCKJ5g4OWkTQ7WogaZBYdLqUeH3C_AfwuPtrsHgr4WnjH-tiiNO5jQXy4bYvM"/>
+</div>
+<span class="font-label-caps text-[10px] text-secondary mb-1 block">LIFESTYLE</span>
+<h3 class="font-metadata text-body-md font-bold leading-tight group-hover:text-secondary transition-colors">The New Work Ethos: Crafting focus in a world of distraction.</h3>
+</div>
+<div class="min-w-[280px] bg-white rounded-[18px] p-3 card-shadow border border-outline-variant/10 group cursor-pointer transition-all hover:-translate-y-1">
+<div class="relative h-32 w-full rounded-xl overflow-hidden mb-3">
+<img class="w-full h-full object-cover" data-alt="Abstract data visualization of global market trends using glowing lines and nodes in shades of deep blue and red." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAULzev-WqXYvUJ92yTCaHUOKLdjaZdjznIF0QLqLGn9sPnLB1gbMqrNV-HTdzy5zk4vtBkH70n48j15fTHLN6XU-ZfOBPnxzHTzWHswntjqBH9WV2aehOOZSAOX2F_3OZiqwqj4vt8BgOQm7fy-9dXg3dSDHy4O5mUCRVX0XJ5Q3_UJ1TFwTxnd_XqZj_2Yl8MCXZ_W9luTOGuIhLx_2A4thLL9AHbGrrchlz9ehtx9i2nSTShYcY3vsGo4qYSxFZJM_mA4fJ_5yo"/>
+</div>
+<span class="font-label-caps text-[10px] text-secondary mb-1 block">FINANCE</span>
+<h3 class="font-metadata text-body-md font-bold leading-tight group-hover:text-secondary transition-colors">Algorithmic Sovereignty: The rise of AI-driven market makers.</h3>
+</div>
+</div>
+</section>
+<!-- Main Feed: Pinterest Style Grid -->
+<section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-gutter">
+<!-- News Card 1 -->
+<article class="bg-white rounded-[18px] card-shadow border border-outline-variant/10 overflow-hidden group cursor-pointer h-fit transition-all hover:-translate-y-1">
+<div class="h-48 relative">
+<img class="w-full h-full object-cover" data-alt="A portrait of a person in high-fashion minimalist clothing walking through a brutalist concrete environment. Shadows are long and dramatic, monochromatic color palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBtISVPQOvMcEI-Yr5wtAcDb5SanAHwT5FfGLhNhsis-tVktDcz8flObu_jnP_7rtneryugX6q7cXcMV9mcamriUc6L0dTvV_WV_8e_OSnwsIlx8vldNv7DFpMHcQhrpfUCBa19uvwqQs4xpq-o_YSgE7B5BLxHVmXsvKBjYyh1gnNU9sXST6_z8gi3Cnpgc9OWRjQpYaNsMz9UouMY2SL063Mi0wpda33YCtBgoiNPw1heWQg_-XdfG3QpFW82PlrZ5juelCF6qB8"/>
+<div class="absolute bottom-3 left-3 bg-white/90 backdrop-blur-md px-2 py-1 rounded-lg font-label-caps text-[10px] text-on-surface">CULTURE</div>
+</div>
+<div class="p-6">
+<h3 class="font-headline-md text-headline-md mb-3 leading-snug group-hover:text-primary transition-colors">Minimalism 2.0: The Aesthetic of Scarcity in an Age of Excess</h3>
+<p class="font-body-md text-metadata text-on-surface-variant mb-6 line-clamp-2">How designers are stripping back to the bare essentials as a form of silent luxury rebellion.</p>
+<div class="flex items-center justify-between border-t border-outline-variant/10 pt-4">
+<span class="text-metadata text-on-surface-variant">By Marcus Thorne</span>
+<span class="text-metadata text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-sm">schedule</span> 8 min read</span>
+</div>
+</div>
+</article>
+<!-- Sponsored Card -->
+<article class="bg-surface-container-low rounded-[18px] border-2 border-dashed border-outline-variant/30 overflow-hidden h-fit transition-all hover:bg-surface-container">
+<div class="p-6">
+<div class="flex items-center justify-between mb-4">
+<span class="font-label-caps text-[10px] text-on-surface-variant bg-surface-container-highest px-2 py-0.5 rounded">SPONSORED</span>
+<span class="material-symbols-outlined text-sm text-on-surface-variant">info</span>
+</div>
+<div class="h-40 relative rounded-xl overflow-hidden mb-4">
+<img class="w-full h-full object-cover" data-alt="A luxury watch on a dark velvet background, dramatic lighting highlighting the intricate gears and craftsmanship. High-end product photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCbG1MBSXK58G21iY5DYu2YWgPmXkUOIwnnGYHjKtfFVhrzj8ChvNOmknlwi0n3vDi1XzJXAkC09ZHTPjWPw4-HqTfyLUyf-MQX_pLFUcz3O61tHkB-EpyelPgHcVKL0WLe7i-zH7wEnvtqyW7ERjkjAG7YY1cwX8QINgV1s5Q1B1k0PgyE9i2IuElC1Eq3ox8sRdXR9-ctjKreax_XAdH1OZZ99WgC2wtvJ583De-3UZ4nJYB2y_t5pNiS1M2ABi4nLCGts-xC1zU"/>
+</div>
+<h3 class="font-headline-md text-headline-md mb-2 leading-tight">Timeless Elegance: The New Chrono Series by Aurum</h3>
+<p class="font-body-md text-metadata text-on-surface-variant">Crafted for those who define the moment. Explore our most advanced movement yet.</p>
+<button class="mt-6 w-full py-2 bg-on-surface text-surface rounded-lg font-label-caps text-label-caps">Discover More</button>
+</div>
+</article>
+<!-- News Card 2 -->
+<article class="bg-white rounded-[18px] card-shadow border border-outline-variant/10 overflow-hidden group cursor-pointer h-fit transition-all hover:-translate-y-1">
+<div class="h-64 relative">
+<img class="w-full h-full object-cover" data-alt="An advanced AI laboratory with blue bioluminescent panels and robotic arms working on a neural processor. Cinematic, high-tech, cool lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDlt2KOZqRTre3635XLcl54bUiv9as4O9rVz4s02n0NTXod-lAU7emV1jEtWWj3b-exugM2G7KaFpX9DyrXRZUWlkMzzf9pqg8cw69IzIpf1LFtfedBeS2hc4vUHddAZqOmsRpJZ5uBhB_21xQ8PjHsVj__urEi6doyjUezhNpGMNyn1DxArJPP0YHI4WGEcT_WVRhFbOslt8rb9W-VMcQBsqVt_4pAuF4Ob_TziNALeb4cUJMNp9PSKCGI2TEeuiLBvHtWUx8yVg"/>
+<div class="absolute bottom-3 left-3 bg-white/90 backdrop-blur-md px-2 py-1 rounded-lg font-label-caps text-[10px] text-on-surface">AI &amp; FUTURE</div>
+</div>
+<div class="p-6">
+<h3 class="font-headline-md text-headline-md mb-3 leading-snug group-hover:text-primary transition-colors">Cognitive Capital: When AI Starts Managing CEOs</h3>
+<p class="font-body-md text-metadata text-on-surface-variant mb-6 line-clamp-3">New data suggests firms with AI-augmented boards are outperforming traditional structures by 40%. Is human intuition becoming a liability?</p>
+<div class="flex items-center justify-between border-t border-outline-variant/10 pt-4">
+<span class="text-metadata text-on-surface-variant">By Sarah Chen</span>
+<span class="text-metadata text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-sm">schedule</span> 12 min read</span>
+</div>
+</div>
+</article>
+<!-- News Card 3 -->
+<article class="bg-white rounded-[18px] card-shadow border border-outline-variant/10 overflow-hidden group cursor-pointer h-fit transition-all hover:-translate-y-1">
+<div class="h-40 relative">
+<img class="w-full h-full object-cover" data-alt="A luxury electric car parked on a coastal road at dawn, the sea in the background. Sleek design, metallic finish, premium lifestyle photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4yqC5Wie-YKeayjdVE8dR4EytjOzM5Yom15uh9x5tdGGMMmhieH5JvENzL4p1RXNEXvsyVhdp6HkUZQaiPyL3a7LyjDiOPMuJ3MtYpd12URH0aPE4q5FaG84Q4aURc5GKX1b-T4UoBJlIycI3gtyy_Ie6sJVq8rXdPFJgG6CZmolqv9hfOFlTCqvDHS0EA-45sWTGTt5d36_IeH956MjzD74GhpU_QnlbvAH1bxHwa0kz1p5LDJ-W3zYwk0UWQLsv460bD32hHyI"/>
+<div class="absolute bottom-3 left-3 bg-white/90 backdrop-blur-md px-2 py-1 rounded-lg font-label-caps text-[10px] text-on-surface">AUTO</div>
+</div>
+<div class="p-6">
+<h3 class="font-headline-md text-headline-md mb-3 leading-snug group-hover:text-primary transition-colors">Beyond the Grid: The Hydrogen Supercar Revolution</h3>
+<div class="flex items-center justify-between border-t border-outline-variant/10 pt-4">
+<span class="text-metadata text-on-surface-variant">By Alex Rivera</span>
+<span class="text-metadata text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-sm">schedule</span> 5 min read</span>
+</div>
+</div>
+</article>
+<!-- AI Recommendation Card (Special Style) -->
+<article class="bg-white rounded-[18px] card-shadow border-2 border-transparent p-1 transition-all hover:-translate-y-1" style="background-image: linear-gradient(white, white), linear-gradient(to bottom right, #0051d5, #b80035); background-origin: border-box; background-clip: content-box, border-box;">
+<div class="p-5">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-primary text-lg">psychology</span>
+<span class="font-label-caps text-[10px] text-primary">SMART RECOMMENDATION</span>
+</div>
+<h3 class="font-headline-md text-headline-md mb-3 leading-snug">The Quantum Leap: Why encrypted communications are your next big risk.</h3>
+<p class="font-body-md text-metadata text-on-surface-variant mb-4">Based on your interest in 'Cybersecurity' and 'International Affairs'.</p>
+<div class="flex items-center gap-2">
+<span class="px-2 py-1 bg-surface-container-low rounded-md text-[10px] font-bold">CYBER</span>
+<span class="px-2 py-1 bg-surface-container-low rounded-md text-[10px] font-bold">QUANTUM</span>
+</div>
+</div>
+</article>
+<!-- Sidebar Ad Slot simulated in feed -->
+<div class="bg-surface-container-lowest border border-outline-variant/20 rounded-[18px] p-6 flex flex-col items-center justify-center text-center">
+<span class="text-[9px] text-on-surface-variant/40 mb-4 tracking-widest">ADVERTISEMENT</span>
+<img class="w-24 mb-6 opacity-80" data-alt="A minimalist logo for a premium private jet service, elegant typography, gold and dark blue palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMGcBKHi0lF2QHTLxyhTWN8THTmKNjbQbZgbdnKNegcgqFhbQWZtojbrm7aV9XxkJe1BFAo1jTyJThtlUrxx7E6J5atKwsnR6riFuPgH5o5GonSKwTzroQCMDj5Rv8sWLxOlfjS_1CvhP1nt57YkTlnRieuiRfCECgc64FXlu24ExHlc02Ibh3bsGQkyNUJAaE5O21-f14itmTFwV-JeUfPq_oAUjg3sHbgjYfsG64lm5U7ypa6_lUjniOSzAcBS0XmPk822lqngk"/>
+<h4 class="font-headline-md text-headline-md mb-2">Reach Anywhere.</h4>
+<p class="text-metadata text-on-surface-variant mb-6">Global reach, local touch. The elite choice for transcontinental travel.</p>
+<button class="px-6 py-2 border border-outline text-on-surface rounded-full font-label-caps text-label-caps hover:bg-on-surface hover:text-surface transition-all">Book Now</button>
+</div>
+</section>
+<!-- Footer -->
+<footer class="mt-20 border-t border-outline-variant pt-16 pb-8">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-gutter mb-12">
+<div class="col-span-1 md:col-span-1">
+<span class="font-display-hero text-headline-md text-on-surface-variant font-extrabold mb-4 block">LuxeGlobal</span>
+<p class="font-metadata text-metadata text-on-surface-variant">The definitive source for high-velocity editorial intelligence and cultural analysis.</p>
+</div>
+<div>
+<h4 class="font-label-caps text-label-caps mb-6">EDITIONS</h4>
+<ul class="flex flex-col gap-3 font-metadata text-metadata text-on-surface-variant">
+<li><a class="hover:text-primary transition-colors" href="#">North America</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Europe &amp; UK</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Asia Pacific</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Middle East</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-label-caps text-label-caps mb-6">COMPANY</h4>
+<ul class="flex flex-col gap-3 font-metadata text-metadata text-on-surface-variant">
+<li><a class="hover:text-primary transition-colors" href="#">About Us</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Press</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Contact</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Careers</a></li>
+</ul>
+</div>
+<div>
+<h4 class="font-label-caps text-label-caps mb-6">LEGAL</h4>
+<ul class="flex flex-col gap-3 font-metadata text-metadata text-on-surface-variant">
+<li><a class="hover:text-primary transition-colors" href="#">Privacy Policy</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Terms of Service</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Ad Choices</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Cookie Settings</a></li>
+</ul>
+</div>
+</div>
+<div class="flex flex-col md:flex-row items-center justify-between gap-4 pt-8 border-t border-outline-variant/10 text-on-surface-variant">
+<p class="font-metadata text-metadata">© 2024 LuxeGlobal Editorial. All rights reserved.</p>
+<div class="flex gap-6">
+<a class="hover:text-primary transition-colors" href="#"><span class="material-symbols-outlined">share</span></a>
+<a class="hover:text-primary transition-colors" href="#"><span class="material-symbols-outlined">language</span></a>
+</div>
+</div>
+</footer>
+</main>
+<!-- Floating UI Elements -->
+<button class="fixed bottom-20 md:bottom-8 right-8 w-12 h-12 bg-white rounded-full shadow-xl border border-outline-variant/20 flex items-center justify-center text-primary transform scale-0 transition-all duration-300 hover:scale-110 z-40" id="scrollTopBtn">
+<span class="material-symbols-outlined">arrow_upward</span>
+</button>
+<!-- Mobile Navigation Shell -->
+<nav class="fixed bottom-0 w-full z-50 lg:hidden bg-surface/90 backdrop-blur-lg border-t border-outline-variant/30 rounded-t-xl shadow-[0px_-4px_20px_rgba(0,0,0,0.05)] h-16 flex justify-around items-center px-4 pb-safe">
+<a class="flex flex-col items-center justify-center text-primary font-bold transition-all transform scale-90 duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">newspaper</span>
+<span class="font-label-caps text-[10px]">Feed</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">search</span>
+<span class="font-label-caps text-[10px]">Search</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">live_tv</span>
+<span class="font-label-caps text-[10px]">Live</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">bookmark</span>
+<span class="font-label-caps text-[10px]">Saved</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-caps text-[10px]">Account</span>
+</a>
+</nav>
+<!-- Sticky Bottom Ad Simulation (Mobile only) -->
+<div class="fixed bottom-16 w-full bg-on-surface text-surface py-2 px-4 flex items-center justify-between lg:hidden z-40 text-xs font-metadata">
+<div class="flex items-center gap-2">
+<span class="bg-surface-variant text-on-surface-variant px-1 rounded text-[8px] font-bold">AD</span>
+<span>Premium insights at your fingertips. Subscribe now.</span>
+</div>
+<button class="material-symbols-outlined text-sm">close</button>
+</div>
+<script>
+        // Scroll to Top Interaction
+        const scrollTopBtn = document.getElementById('scrollTopBtn');
+        window.onscroll = function() {
+            if (document.body.scrollTop > 400 || document.documentElement.scrollTop > 400) {
+                scrollTopBtn.classList.remove('scale-0');
+                scrollTopBtn.classList.add('scale-100');
+            } else {
+                scrollTopBtn.classList.remove('scale-100');
+                scrollTopBtn.classList.add('scale-0');
+            }
+        };
+        scrollTopBtn.onclick = function() {
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        };
+
+        // Micro-interaction for cards
+        document.querySelectorAll('article').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-4px)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0)';
+            });
+        });
+    </script>
+</body></html>

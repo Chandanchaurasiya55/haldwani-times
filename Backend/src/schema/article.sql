@@ -1,0 +1,15 @@
+CREATE TABLE IF NOT EXISTS articles (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  category VARCHAR(255) NOT NULL,
+  type VARCHAR(50) NOT NULL,
+  image_url TEXT,
+  author_id INT NOT NULL,
+  status VARCHAR(50) NOT NULL DEFAULT 'pending',
+  source_name VARCHAR(255) DEFAULT NULL,
+  source_url TEXT DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (author_id) REFERENCES reporters(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
