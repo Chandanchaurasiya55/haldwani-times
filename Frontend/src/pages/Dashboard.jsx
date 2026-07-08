@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
-function Dashboard({ onClose }) {
+function Dashboard({ onClose, onRefreshArticles }) {
   // Authentication & session state
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem('ht_user');
@@ -30,7 +30,10 @@ function Dashboard({ onClose }) {
   // Admin State
   const [pendingArticles, setPendingArticles] = useState([]);
   const [reportersList, setReportersList] = useState([]);
-  const [adminTab, setAdminTab] = useState('pending'); // 'pending' or 'reporters'
+  const [adminTab, setAdminTab] = useState('pending'); // 'pending', 'reporters', or 'blog'
+  const [blogTitle, setBlogTitle] = useState('');
+  const [blogContent, setBlogContent] = useState('');
+  const [blogImageUrl, setBlogImageUrl] = useState('');
 
   // General User State
   const [myBookmarks, setMyBookmarks] = useState([]);
@@ -196,6 +199,39 @@ function Dashboard({ onClose }) {
       setNewContent('');
       setNewImageUrl('');
       fetchMyArticles();
+    } catch (err) {
+      setErrorMsg(err.message);
+    }
+  };
+
+  const handlePostBlog = async (e) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/articles/blog`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: blogTitle,
+          content: blogContent,
+          image_url: blogImageUrl
+        })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to publish blog.');
+      }
+
+      setSuccessMsg('Blog post published successfully to the main feed!');
+      setBlogTitle('');
+      setBlogContent('');
+      setBlogImageUrl('');
+      if (onRefreshArticles) {
+        onRefreshArticles();
+      }
     } catch (err) {
       setErrorMsg(err.message);
     }
@@ -505,8 +541,8 @@ function Dashboard({ onClose }) {
             {currentUser.role === 'admin' && (
               <div className="flex flex-col gap-8">
                 {/* Stats Widgets */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 select-none">
-                  <div className="bg-slate-50 border border-slate-100 p-5 rounded-2xl flex items-center gap-4 hover:shadow-sm transition-all">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 select-none">
+                  <div className="bg-gradient-to-br from-white to-slate-50 border border-slate-200/80 p-5 rounded-2xl flex items-center gap-4 shadow-sm hover:shadow transition-all duration-300">
                     <span className="material-symbols-outlined text-3xl text-primary bg-primary-container p-3 rounded-xl font-bold">rate_review</span>
                     <div>
                       <h4 className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Pending Reviews</h4>
@@ -514,11 +550,19 @@ function Dashboard({ onClose }) {
                     </div>
                   </div>
 
-                  <div className="bg-slate-50 border border-slate-100 p-5 rounded-2xl flex items-center gap-4 hover:shadow-sm transition-all">
+                  <div className="bg-gradient-to-br from-white to-slate-50 border border-slate-200/80 p-5 rounded-2xl flex items-center gap-4 shadow-sm hover:shadow transition-all duration-300">
                     <span className="material-symbols-outlined text-3xl text-secondary bg-secondary-container p-3 rounded-xl font-bold">assignment_ind</span>
                     <div>
                       <h4 className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Registered Reporters</h4>
                       <span className="text-xl font-black text-slate-800">{reportersList.length} Accounts</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-white to-slate-50 border border-slate-200/80 p-5 rounded-2xl flex items-center gap-4 shadow-sm hover:shadow transition-all duration-300">
+                    <span className="material-symbols-outlined text-3xl text-[#b80035] bg-[#b80035]/10 p-3 rounded-xl font-bold">book</span>
+                    <div>
+                      <h4 className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Editorial Blog</h4>
+                      <span className="text-xl font-black text-slate-800">Publish Directly</span>
                     </div>
                   </div>
                 </div>
@@ -539,10 +583,17 @@ function Dashboard({ onClose }) {
                     <span className="material-symbols-outlined text-lg">group</span>
                     <span>Reporters ({reportersList.length})</span>
                   </button>
+                  <button 
+                    onClick={() => setAdminTab('blog')}
+                    className={`py-3 px-6 font-bold text-sm transition-all border-b-2 flex items-center gap-2 ${adminTab === 'blog' ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                  >
+                    <span className="material-symbols-outlined text-lg">post_add</span>
+                    <span>Write Blog</span>
+                  </button>
                 </div>
 
                 {/* Tab 1: Articles pending review */}
-                {adminTab === 'pending' ? (
+                {adminTab === 'pending' && (
                   <div className="flex flex-col gap-6">
                     {pendingArticles.length === 0 ? (
                       <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200 flex flex-col items-center">
@@ -551,7 +602,7 @@ function Dashboard({ onClose }) {
                       </div>
                     ) : (
                       pendingArticles.map((art) => (
-                        <div key={art.id} className="p-6 border border-slate-100 rounded-2xl bg-white shadow-sm hover:shadow transition-all flex flex-col md:flex-row gap-6">
+                        <div key={art.id} className="p-6 border border-slate-150 rounded-2xl bg-white shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row gap-6">
                           {art.image_url && (
                             <img 
                               src={art.image_url} 
@@ -598,8 +649,10 @@ function Dashboard({ onClose }) {
                       ))
                     )}
                   </div>
-                ) : (
-                  /* Tab 2: Manage reporters list */
+                )}
+
+                {/* Tab 2: Manage reporters list */}
+                {adminTab === 'reporters' && (
                   <div className="border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
                     <div className="overflow-x-auto">
                       <table className="w-full text-left border-collapse bg-white">
@@ -647,6 +700,64 @@ function Dashboard({ onClose }) {
                         </tbody>
                       </table>
                     </div>
+                  </div>
+                )}
+
+                {/* Tab 3: Write Blog Panel */}
+                {adminTab === 'blog' && (
+                  <div className="bg-slate-50/60 border border-slate-200/60 rounded-3xl p-6 md:p-8 shadow-sm flex flex-col gap-6">
+                    <div>
+                      <h3 className="text-lg font-extrabold text-slate-800 flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[#b80035] text-2xl">post_add</span>
+                        <span>Write Blog Post</span>
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-1">Directly publish editorial opinion articles, essays, and stories onto the blog category of Haldwani Times.</p>
+                    </div>
+
+                    <form onSubmit={handlePostBlog} className="flex flex-col gap-5">
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-bold text-slate-600">Blog Title</label>
+                        <input 
+                          type="text" 
+                          value={blogTitle}
+                          onChange={(e) => setBlogTitle(e.target.value)}
+                          required
+                          placeholder="e.g. Navigating Haldwani's Urban Shift: A Kumaoni Perspective..."
+                          className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm transition-all bg-white"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-bold text-slate-600">Cover Image URL (Optional)</label>
+                        <input 
+                          type="url" 
+                          value={blogImageUrl}
+                          onChange={(e) => setBlogImageUrl(e.target.value)}
+                          placeholder="e.g. https://images.unsplash.com/... or leave blank"
+                          className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm transition-all bg-white"
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs font-bold text-slate-600">Blog Content</label>
+                        <textarea 
+                          rows="8"
+                          value={blogContent}
+                          onChange={(e) => setBlogContent(e.target.value)}
+                          required
+                          placeholder="Draft your editorial blog article here..."
+                          className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm transition-all bg-white"
+                        />
+                      </div>
+
+                      <button 
+                        type="submit" 
+                        className="bg-[#b80035] hover:bg-[#b80035]/90 text-white font-bold text-xs uppercase py-3.5 rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-0.5 tracking-wider flex items-center justify-center gap-1.5 self-start px-8"
+                      >
+                        <span className="material-symbols-outlined text-base">send</span>
+                        <span>Publish Blog Post</span>
+                      </button>
+                    </form>
                   </div>
                 )}
               </div>
@@ -786,57 +897,107 @@ function Dashboard({ onClose }) {
                 LOGGED IN: READER DASHBOARD
                 ========================================== */}
             {currentUser.role === 'user' && (
-              <div className="flex flex-col gap-6">
-                <h3 className="text-lg font-extrabold text-slate-800 border-b border-slate-50 pb-2 flex items-center gap-2 select-none">
-                  <span className="material-symbols-outlined text-primary text-xl">bookmark</span>
-                  <span>My Saved Articles ({myBookmarks.length})</span>
-                </h3>
-
-                {myBookmarks.length === 0 ? (
-                  <div className="text-center py-16 bg-slate-50 border border-dashed border-slate-200 rounded-2xl flex flex-col items-center select-none">
-                    <span className="material-symbols-outlined text-5xl text-slate-300 mb-2">bookmark_border</span>
-                    <p className="text-sm font-bold text-slate-500">Your library is empty.</p>
-                    <p className="text-xs text-slate-400 mt-1">Click the bookmark icon on any homepage news card to save it here.</p>
+              <div className="flex flex-col gap-8">
+                {/* Greeting Jumbotron */}
+                <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-zinc-900 text-white rounded-3xl p-6 md:p-8 shadow-md relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6 select-none">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+                  <div className="flex items-center gap-4 z-10">
+                    <div className="w-14 h-14 rounded-2xl bg-primary/15 border border-primary/25 flex items-center justify-center text-primary font-black text-2xl uppercase">
+                      {currentUser.username.slice(0, 2)}
+                    </div>
+                    <div>
+                      <h3 className="text-xl md:text-2xl font-black tracking-tight">नमस्ते, {currentUser.username}!</h3>
+                      <p className="text-xs text-slate-400 mt-1">आपकी पर्सनल फीड में आपका स्वागत है। यहां आपके सहेजे गए लेख व्यवस्थित हैं।</p>
+                    </div>
                   </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {myBookmarks.map((art) => (
-                      <div key={art.id} className="p-5 border border-slate-100 rounded-2xl bg-white shadow-sm hover:shadow hover:-translate-y-0.5 transition-all flex gap-4 relative">
-                        {art.image_url && (
-                          <img 
-                            src={art.image_url} 
-                            alt="Cover" 
-                            className="w-24 h-24 object-cover rounded-xl bg-slate-100 shrink-0" 
-                          />
-                        )}
-                        <div className="flex-1 flex flex-col gap-2 justify-between">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-[8px] bg-primary-container text-primary font-bold px-2 py-0.5 rounded uppercase tracking-wider">
-                                {art.type}
-                              </span>
-                              <span className="text-[10px] text-slate-400 font-bold">
-                                {art.category}
-                              </span>
-                            </div>
-                            <h4 className="text-sm font-extrabold text-slate-800 line-clamp-2 mt-1 leading-snug">{art.title}</h4>
-                          </div>
 
-                          <div className="flex items-center justify-between border-t border-slate-50 pt-2 mt-1 select-none">
-                            <span className="text-[9px] text-slate-400 font-bold">By {art.author_name}</span>
-                            <button 
-                              onClick={() => handleRemoveBookmark(art.id)}
-                              className="text-primary hover:text-[#06b6d4] transition-all font-bold text-xs uppercase flex items-center gap-0.5"
-                            >
-                              <span className="material-symbols-outlined text-sm font-bold">bookmark_remove</span>
-                              Remove
-                            </button>
+                  <div className="flex items-center gap-2 border border-slate-700 bg-slate-800/40 rounded-xl px-4 py-2 shrink-0 text-xs font-semibold text-slate-300 z-10">
+                    <span className="material-symbols-outlined text-base">calendar_today</span>
+                    <span>{new Date().toLocaleDateString('hi-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                  </div>
+                </div>
+
+                {/* Reader Statistics Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 select-none">
+                  <div className="bg-white border border-slate-200/80 p-5 rounded-2xl flex items-center gap-4 shadow-sm hover:shadow transition-all duration-300">
+                    <span className="material-symbols-outlined text-3xl text-primary bg-primary-container p-3 rounded-xl font-bold">collections_bookmark</span>
+                    <div>
+                      <h4 className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">सहेजे गए लेख (Bookmarks)</h4>
+                      <span className="text-xl font-black text-slate-800">{myBookmarks.length} समाचार</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-white border border-slate-200/80 p-5 rounded-2xl flex items-center gap-4 shadow-sm hover:shadow transition-all duration-300">
+                    <span className="material-symbols-outlined text-3xl text-secondary bg-secondary-container p-3 rounded-xl font-bold">history_toggle_off</span>
+                    <div>
+                      <h4 className="text-[10px] text-slate-400 font-bold uppercase tracking-wider font-sans">पढ़ने का समय (Est. Read Time)</h4>
+                      <span className="text-xl font-black text-slate-800">{myBookmarks.length * 4} मिनट</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-white border border-slate-200/80 p-5 rounded-2xl flex items-center gap-4 shadow-sm hover:shadow transition-all duration-300">
+                    <span className="material-symbols-outlined text-3xl text-emerald-500 bg-emerald-50 p-3 rounded-xl font-bold">verified_user</span>
+                    <div>
+                      <h4 className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">खाता स्थिति (Status)</h4>
+                      <span className="text-xl font-black text-emerald-600 uppercase">सक्रिय (Active)</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bookmarks Section */}
+                <div className="flex flex-col gap-6">
+                  <h3 className="text-lg font-extrabold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2 select-none">
+                    <span className="material-symbols-outlined text-primary text-xl">bookmark</span>
+                    <span>मेरी लाइब्रेरी ({myBookmarks.length})</span>
+                  </h3>
+
+                  {myBookmarks.length === 0 ? (
+                    <div className="text-center py-16 bg-slate-50 border border-dashed border-slate-200 rounded-2xl flex flex-col items-center select-none">
+                      <span className="material-symbols-outlined text-5xl text-slate-300 mb-2">bookmark_border</span>
+                      <p className="text-sm font-bold text-slate-500">आपकी लाइब्रेरी खाली है।</p>
+                      <p className="text-xs text-slate-400 mt-1">मुख्य समाचारों पर बुकमार्क आइकन दबाकर उन्हें यहां सहेजें।</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {myBookmarks.map((art) => (
+                        <div key={art.id} className="p-4 border border-slate-200/60 rounded-2xl bg-white shadow-sm hover:shadow-md transition-all duration-300 flex gap-4 relative">
+                          {(art.image_url) && (
+                            <img 
+                              src={art.image_url} 
+                              alt="Cover" 
+                              className="w-24 h-24 object-cover rounded-xl bg-slate-50 shrink-0" 
+                              loading="lazy"
+                            />
+                          )}
+                          <div className="flex-1 flex flex-col gap-2 justify-between min-w-0">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[8px] bg-primary-container text-primary font-bold px-2 py-0.5 rounded uppercase tracking-wider">
+                                  {art.type}
+                                </span>
+                                <span className="text-[10px] text-slate-400 font-bold truncate">
+                                  {art.category}
+                                </span>
+                              </div>
+                              <h4 className="text-sm font-extrabold text-slate-800 line-clamp-2 mt-1 leading-snug">{art.title}</h4>
+                            </div>
+
+                            <div className="flex items-center justify-between border-t border-slate-100 pt-2 mt-1 select-none">
+                              <span className="text-[9px] text-slate-400 font-bold truncate pr-2">By {art.author_name}</span>
+                              <button 
+                                onClick={() => handleRemoveBookmark(art.id)}
+                                className="text-primary hover:text-primary-hover transition-all font-bold text-xs uppercase flex items-center gap-0.5 shrink-0"
+                              >
+                                <span className="material-symbols-outlined text-sm font-bold">bookmark_remove</span>
+                                <span>हटाएं</span>
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 

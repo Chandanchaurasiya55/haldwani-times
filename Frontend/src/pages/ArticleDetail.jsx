@@ -331,12 +331,7 @@ function ArticleDetail({ article, onClose, onSelectArticle, allArticles }) {
           </div>
 
           {/* Body Content */}
-          {isTranslating && (
-            <div className="flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-200/60 rounded-xl text-amber-700 text-sm font-semibold animate-pulse mb-6">
-              <span className="material-symbols-outlined text-base animate-spin">translate</span>
-              हिंदी में अनुवाद हो रहा है...
-            </div>
-          )}
+
           <article className="prose prose-lg max-w-none font-body-lg text-body-lg text-on-surface-variant space-y-8 leading-relaxed">
             <p className="first-letter:text-5xl first-letter:font-extrabold first-letter:text-primary first-letter:mr-3 first-letter:float-left first-letter:leading-none">
               {typeof enrichedParagraphs[0] === 'string' ? enrichedParagraphs[0] : enrichedParagraphs[0].text}

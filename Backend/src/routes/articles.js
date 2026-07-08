@@ -79,6 +79,37 @@ router.get('/my-submissions/:authorId', (req, res) => {
   );
 });
 
+// @route   POST /api/articles/blog
+// @desc    Publish a new blog post directly (admin desk)
+router.post('/blog', (req, res) => {
+  const { title, content, image_url } = req.body;
+
+  if (!title || !content) {
+    return res.status(400).json({ message: 'Title and content are required.' });
+  }
+
+  db.query(
+    `INSERT INTO articles (title, content, category, type, image_url, author_id, status)
+     VALUES (?, ?, 'Blog', 'blog', ?, 1, 'published')`,
+    [title, content, image_url || null],
+    (err, result) => {
+      if (err) {
+        return res.status(500).json({ message: 'Failed to publish blog.', error: err.message });
+      }
+      res.status(201).json({
+        id: result.insertId,
+        title,
+        content,
+        category: 'Blog',
+        type: 'blog',
+        image_url,
+        status: 'published',
+        message: 'Blog post published successfully!'
+      });
+    }
+  );
+});
+
 // ==========================================
 // ADMIN ENDPOINTS
 // ==========================================

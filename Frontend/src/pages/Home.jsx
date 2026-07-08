@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
@@ -75,56 +75,69 @@ const categoryPlaceholders = {
 
 function getFallbackImage(title, categoryName) {
   const cleanTitle = (title || '').toLowerCase();
-  
-  // Extract specific theme-based keywords from the title
-  let query = 'news';
-  
-  if (cleanTitle.includes('train') || cleanTitle.includes('railway') || cleanTitle.includes('rail')) {
-    query = 'train,railway';
-  } else if (cleanTitle.includes('temple') || cleanTitle.includes('monument') || cleanTitle.includes('taj mahal') || cleanTitle.includes('history')) {
-    query = 'temple,monument,india';
-  } else if (cleanTitle.includes('road') || cleanTitle.includes('highway') || cleanTitle.includes('accident') || cleanTitle.includes('crash') || cleanTitle.includes('collision')) {
-    query = 'road,accident';
-  } else if (cleanTitle.includes('cricket') || cleanTitle.includes('dhoni') || cleanTitle.includes('kohli') || cleanTitle.includes('match') || cleanTitle.includes('ipl') || cleanTitle.includes('t20') || cleanTitle.includes('sports')) {
-    query = 'cricket,sports';
-  } else if (cleanTitle.includes('bjp') || cleanTitle.includes('modi') || cleanTitle.includes('politics') || cleanTitle.includes('election') || cleanTitle.includes('minister') || cleanTitle.includes('congress') || cleanTitle.includes('gandhi') || cleanTitle.includes('cabinet') || cleanTitle.includes('parliament')) {
-    query = 'politics,government';
-  } else if (cleanTitle.includes('school') || cleanTitle.includes('exam') || cleanTitle.includes('neet') || cleanTitle.includes('student') || cleanTitle.includes('university') || cleanTitle.includes('education') || cleanTitle.includes('syllabus')) {
-    query = 'classroom,school,education';
-  } else if (cleanTitle.includes('gold') || cleanTitle.includes('market') || cleanTitle.includes('stock') || cleanTitle.includes('rupee') || cleanTitle.includes('economy') || cleanTitle.includes('finance') || cleanTitle.includes('business') || cleanTitle.includes('trade')) {
-    query = 'business,finance,market';
-  } else if (cleanTitle.includes('weather') || cleanTitle.includes('rain') || cleanTitle.includes('monsoon') || cleanTitle.includes('flood') || cleanTitle.includes('landslide') || cleanTitle.includes('heavy rain')) {
-    query = 'monsoon,rain,weather';
-  } else if (cleanTitle.includes('celebrity') || cleanTitle.includes('movie') || cleanTitle.includes('film') || cleanTitle.includes('actor') || cleanTitle.includes('bollywood') || cleanTitle.includes('star') || cleanTitle.includes('entertainment')) {
-    query = 'bollywood,movie,actor';
-  } else if (cleanTitle.includes('haldwani') || cleanTitle.includes('nainital') || cleanTitle.includes('kumaon') || cleanTitle.includes('uttarakhand')) {
-    query = 'uttarakhand,haldwani,himalayas';
-  } else {
-    // Default: use the category name as search query if no specific title keyword is matched
-    query = categoryName ? `${categoryName.toLowerCase().replace(/[^a-z0-9]/g, ',')},news` : 'news,journalism';
+  const cat = (categoryName || '').toLowerCase().trim();
+  let key = 'default';
+
+  if (cat.includes('uttarakhand') || cat.includes('local') || cleanTitle.includes('haldwani') || cleanTitle.includes('uttarakhand')) {
+    key = 'uttarakhand';
+  } else if (cat.includes('india') || cat.includes('national')) {
+    key = 'india';
+  } else if (cat.includes('politics')) {
+    key = 'politics';
+  } else if (cat.includes('business') || cat.includes('economy')) {
+    key = 'business';
+  } else if (cat.includes('education') || cat.includes('school') || cat.includes('exam')) {
+    key = 'education';
+  } else if (cat.includes('celebrity') || cat.includes('entertainment') || cat.includes('movie')) {
+    key = 'celebrity';
+  } else if (cat.includes('world') || cat.includes('international')) {
+    key = 'world';
+  } else if (cat.includes('food') || cat.includes('recipe')) {
+    key = 'food';
   }
 
-  // Create hash of the title to use as a signature seed for Unsplash so we get unique images
+  const list = categoryPlaceholders[key] || categoryPlaceholders['default'];
+  
+  // Create hash of the title to deterministically select one of the placeholder images
   let hash = 0;
   const str = title || '';
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const seed = Math.abs(hash);
-
-  return `https://images.unsplash.com/featured/800x600/?${query}&sig=${seed}`;
+  const idx = Math.abs(hash) % list.length;
+  
+  return list[idx];
 }
 
-function Home({ selectedCategory, onSelectCategory, searchQuery, selectedDate, onSelectArticle, onArticlesLoaded }) {
+
+function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, selectedCategory, onSelectCategory, searchQuery, selectedDate, onSelectArticle, onRefreshArticles }) {
   const [activeTab, setActiveTab] = useState('all');
-  const [articles, setArticles] = useState([]);
   const [bookmarkedIds, setBookmarkedIds] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
-  // Hindi translation cache: { articleId: { title, summary } }
-  const [hindiCache, setHindiCache] = useState({});
+  
+  // Lazy loading pagination count
+  const [visibleCount, setVisibleCount] = useState(12);
+
+  // Load Hindi translation cache from sessionStorage
+  const [hindiCache, setHindiCache] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem('ht_hindi_cache');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
   const [isTranslating, setIsTranslating] = useState(false);
+
+  // Sync translation cache to sessionStorage
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('ht_hindi_cache', JSON.stringify(hindiCache));
+    } catch (err) {
+      console.error('Failed to sync translation cache:', err);
+    }
+  }, [hindiCache]);
 
   // Translate a single text string to Hindi using Google Translate free endpoint
   const translateToHindi = async (text) => {
@@ -144,6 +157,25 @@ function Home({ selectedCategory, onSelectCategory, searchQuery, selectedDate, o
     }
   };
 
+  // Map rawArticles to mappedArticles with categories and high-quality Unsplash fallbacks
+  const articles = useMemo(() => {
+    return rawArticles.map(art => ({
+      id: art.id,
+      category: `${art.type.toUpperCase()} / ${art.category.toUpperCase()}`,
+      rawCategory: (art.category || '').toLowerCase(), // raw DB category for filtering
+      title: art.title,
+      summary: art.content,
+      author: art.source_name || art.author_name || 'Haldwani Times',
+      readTime: '4 min read',
+      type: art.type,
+      image: art.image_url || getFallbackImage(art.title, art.category),
+      hasRealImage: !!art.image_url,
+      sourceName: art.source_name,
+      sourceUrl: art.source_url,
+      createdAt: art.created_at
+    }));
+  }, [rawArticles]);
+
   // Auto scroll ads every 3 seconds
   useEffect(() => {
     const timer = setInterval(() => {
@@ -152,47 +184,37 @@ function Home({ selectedCategory, onSelectCategory, searchQuery, selectedDate, o
     return () => clearInterval(timer);
   }, []);
 
-  // Reset activeTab to 'all' whenever selectedCategory changes
+  // Reset activeTab and pagination on selectedCategory change
   useEffect(() => {
     setActiveTab('all');
+    setVisibleCount(12);
   }, [selectedCategory]);
-  // Fetch articles and bookmarks on mount
+
   useEffect(() => {
-    const fetchArticles = async () => {
-      try {
-        setIsLoading(true);
-        const res = await fetch(`${API_BASE_URL}/articles`);
-        if (res.ok) {
-          const data = await res.json();
-          // Map DB columns to our UI keys
-          const mapped = data.map(art => ({
-            id: art.id,
-            category: `${art.type.toUpperCase()} / ${art.category.toUpperCase()}`,
-            rawCategory: (art.category || '').toLowerCase(), // raw DB category for filtering
-            title: art.title,
-            summary: art.content,
-            author: art.source_name || art.author_name || 'Haldwani Times',
-            readTime: '4 min read',
-            type: art.type,
-            image: art.image_url,
-            hasRealImage: !!art.image_url,
-            sourceName: art.source_name,
-            sourceUrl: art.source_url,
-            createdAt: art.created_at
-          }));
-          setArticles(mapped);
-          onArticlesLoaded && onArticlesLoaded(mapped);
-        }
-      } catch (err) {
-        console.error('Failed to fetch articles:', err);
-      } finally {
-        setIsLoading(false);
+    setVisibleCount(12);
+  }, [activeTab]);
+
+  // Smooth scroll aggregator feed when tab or category changes
+  useEffect(() => {
+    if (selectedCategory !== 'All' || activeTab !== 'all') {
+      const element = document.getElementById('news-feed');
+      if (element) {
+        const offset = 160; 
+        const bodyRect = document.body.getBoundingClientRect().top;
+        const elementRect = element.getBoundingClientRect().top;
+        const elementPosition = elementRect - bodyRect;
+        const offsetPosition = elementPosition - offset;
+
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
       }
-    };
+    }
+  }, [selectedCategory, activeTab]);
 
-    fetchArticles();
-
-    // Check user session
+  // Load bookmarks on mount & check session
+  useEffect(() => {
     const savedUser = localStorage.getItem('ht_user');
     if (savedUser) {
       const user = JSON.parse(savedUser);
@@ -254,16 +276,6 @@ function Home({ selectedCategory, onSelectCategory, searchQuery, selectedDate, o
   };
 
   const filteredArticles = articles.filter(art => {
-    // 0. Image check — Hindi News articles may not have images (allow them through)
-    const isHindiCategory = selectedCategory === 'Hindi News';
-    if (!art.image && !isHindiCategory) {
-      return false;
-    }
-    // For Hindi News, also allow articles whose rawCategory is 'hindi news'
-    if (!art.image && isHindiCategory && art.rawCategory !== 'hindi news') {
-      return false;
-    }
-
     // 1. Tab filtering (type)
     if (activeTab !== 'all' && art.type !== activeTab) {
       return false;
@@ -419,8 +431,8 @@ function Home({ selectedCategory, onSelectCategory, searchQuery, selectedDate, o
 
   // Auto-translate all articles to Hindi
   const isHindiMode = selectedCategory === 'Hindi News';
-  // Track which article IDs have already been translated
-  const translatedIdsRef = React.useRef(new Set());
+  // Track which article IDs have already been translated, initialized from cached keys
+  const translatedIdsRef = useRef(new Set(Object.keys(hindiCache).map(Number)));
   // Build a stable key from article IDs to trigger translation only when articles change
   const articleIdsKey = finalDisplayArticles.map(a => a.id).join(',');
 
@@ -586,7 +598,7 @@ function Home({ selectedCategory, onSelectCategory, searchQuery, selectedDate, o
       <div className="w-full max-w-[1440px] mx-auto px-4 md:px-12 flex flex-col gap-6 md:gap-10">
 
         {/* Loading / Empty States */}
-        {isLoading ? (
+        {isFetchLoading ? (
           <div className="text-center py-20 flex flex-col items-center gap-4">
             <div className="w-12 h-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
             <span className="font-bold text-sm text-slate-500 uppercase tracking-widest">समाचार लोड हो रहा है...</span>
@@ -607,6 +619,7 @@ function Home({ selectedCategory, onSelectCategory, searchQuery, selectedDate, o
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
                       src={display.image}
                       alt={display.title}
+                      loading="lazy"
                     />
                     <div className="absolute top-3 left-3 bg-primary text-on-primary px-2.5 py-1 rounded-full flex items-center gap-1.5 font-label-caps text-[9px] md:text-xs shadow-lg select-none">
                       <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
@@ -662,16 +675,8 @@ function Home({ selectedCategory, onSelectCategory, searchQuery, selectedDate, o
               );
             })()}
 
-            {/* Translation progress indicator */}
-            {isTranslating && (
-              <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200/60 rounded-xl text-amber-700 text-xs font-semibold animate-pulse">
-                <span className="material-symbols-outlined text-sm animate-spin">translate</span>
-                हिंदी में अनुवाद हो रहा है...
-              </div>
-            )}
-
             {/* Aggregator Navigation / Tabs Bar */}
-            <section className="border-b border-black/10 pb-1 mt-2 md:mt-4">
+            <section id="news-feed" className="border-b border-black/10 pb-1 mt-2 md:mt-4">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 sm:gap-6 md:gap-8 font-bold text-xs sm:text-sm text-on-surface-variant select-none overflow-x-auto no-scrollbar pb-2 flex-1">
                   <button 
@@ -724,62 +729,77 @@ function Home({ selectedCategory, onSelectCategory, searchQuery, selectedDate, o
                 <p className="text-xs md:text-sm text-slate-400 mt-1 px-6">आपके फ़िल्टर से मेल खाने वाला कोई लेख नहीं मिला। कोई अन्य श्रेणी चुनें या खोज फ़िल्टर हटाएँ।</p>
               </div>
             ) : (
-              <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
-                {finalDisplayArticles.map((article) => {
-                  const display = getDisplayArticle(article);
-                  return (
-                  <article 
-                    key={article.id}
-                    onClick={() => onSelectArticle && onSelectArticle(article)}
-                    className="bg-white rounded-2xl md:rounded-[18px] card-shadow border border-outline-variant/10 overflow-hidden group h-fit transition-all hover:-translate-y-1 relative cursor-pointer"
-                  >
-                    {(!currentUser || currentUser.role === 'user') && (
-                      <button
-                        onClick={(e) => handleToggleBookmark(e, article.id)}
-                        className="absolute top-3 right-3 bg-white/90 hover:bg-white backdrop-blur-sm p-1.5 rounded-full shadow-md text-on-surface hover:text-primary transition-all flex items-center justify-center z-10"
-                      >
-                        <span className="material-symbols-outlined text-lg font-bold">
-                          {bookmarkedIds.includes(article.id) ? 'bookmark' : 'bookmark_border'}
-                        </span>
-                      </button>
-                    )}
-
-                    <div className="h-44 sm:h-48 md:h-52 relative overflow-hidden">
-                      <img 
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
-                        src={display.image} 
-                        alt={display.title}
-                      />
-                      <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-md font-label-caps text-[9px] font-bold text-on-surface uppercase select-none">
-                        {display.category}
-                      </div>
-                    </div>
-                    <div className="p-4 md:p-6 flex flex-col gap-2 md:gap-3">
-                      <h3 className="font-serif text-base md:text-lg lg:text-xl font-bold leading-snug group-hover:text-primary transition-colors text-[#191c1e]">
-                        {display.title}
-                      </h3>
-                      <p className="font-body-md text-xs md:text-sm text-on-surface-variant line-clamp-2 md:line-clamp-3 leading-relaxed">
-                        {display.summary}
-                      </p>
-                      
-                      <div className="flex flex-col gap-1 md:gap-2 border-t border-outline-variant/10 pt-3 md:pt-4 mt-1 md:mt-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[11px] md:text-xs text-on-surface-variant font-bold truncate mr-2">{display.sourceName || display.author}</span>
-                          <span className="text-[11px] md:text-xs text-on-surface-variant flex items-center gap-0.5 font-semibold shrink-0">
-                            <span className="material-symbols-outlined text-sm">schedule</span> {display.readTime}
+              <div className="flex flex-col gap-8">
+                <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
+                  {finalDisplayArticles.slice(0, visibleCount).map((article) => {
+                    const display = getDisplayArticle(article);
+                    return (
+                    <article 
+                      key={article.id}
+                      onClick={() => onSelectArticle && onSelectArticle(article)}
+                      className="bg-white rounded-2xl md:rounded-[18px] card-shadow border border-outline-variant/10 overflow-hidden group h-fit transition-all hover:-translate-y-1 relative cursor-pointer"
+                    >
+                      {(!currentUser || currentUser.role === 'user') && (
+                        <button
+                          onClick={(e) => handleToggleBookmark(e, article.id)}
+                          className="absolute top-3 right-3 bg-white/90 hover:bg-white backdrop-blur-sm p-1.5 rounded-full shadow-md text-on-surface hover:text-primary transition-all flex items-center justify-center z-10"
+                        >
+                          <span className="material-symbols-outlined text-lg font-bold">
+                            {bookmarkedIds.includes(article.id) ? 'bookmark' : 'bookmark_border'}
                           </span>
+                        </button>
+                      )}
+
+                      <div className="h-44 sm:h-48 md:h-52 relative overflow-hidden">
+                        <img 
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                          src={display.image} 
+                          alt={display.title}
+                          loading="lazy"
+                        />
+                        <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-md font-label-caps text-[9px] font-bold text-on-surface uppercase select-none">
+                          {display.category}
                         </div>
-                        {display.sourceName && (
-                          <div className="text-[9px] md:text-[10px] text-slate-400 italic font-medium">
-                            {`${display.sourceName} से संकलित`}
-                          </div>
-                        )}
                       </div>
-                    </div>
-                  </article>
-                  );
-                })}
-              </section>
+                      <div className="p-4 md:p-6 flex flex-col gap-2 md:gap-3">
+                        <h3 className="font-serif text-base md:text-lg lg:text-xl font-bold leading-snug group-hover:text-primary transition-colors text-[#191c1e]">
+                          {display.title}
+                        </h3>
+                        <p className="font-body-md text-xs md:text-sm text-on-surface-variant line-clamp-2 md:line-clamp-3 leading-relaxed">
+                          {display.summary}
+                        </p>
+                        
+                        <div className="flex flex-col gap-1 md:gap-2 border-t border-outline-variant/10 pt-3 md:pt-4 mt-1 md:mt-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] md:text-xs text-on-surface-variant font-bold truncate mr-2">{display.sourceName || display.author}</span>
+                            <span className="text-[11px] md:text-xs text-on-surface-variant flex items-center gap-0.5 font-semibold shrink-0">
+                              <span className="material-symbols-outlined text-sm">schedule</span> {display.readTime}
+                            </span>
+                          </div>
+                          {display.sourceName && (
+                            <div className="text-[9px] md:text-[10px] text-slate-400 italic font-medium">
+                              {`${display.sourceName} से संकलित`}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </article>
+                    );
+                  })}
+                </section>
+
+                {finalDisplayArticles.length > visibleCount && (
+                  <div className="flex justify-center mt-6 select-none">
+                    <button 
+                      onClick={() => setVisibleCount(prev => prev + 12)}
+                      className="px-8 py-3 bg-white hover:bg-slate-50 text-primary border border-primary/20 rounded-full font-bold text-xs uppercase shadow-sm hover:shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-sm font-black">expand_more</span>
+                      <span>और समाचार लोड करें (Load More)</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
           </>
         )}
