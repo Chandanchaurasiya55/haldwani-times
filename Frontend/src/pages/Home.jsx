@@ -122,6 +122,27 @@ function Home({ selectedCategory, onSelectCategory, searchQuery, selectedDate, o
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
+  // Hindi translation cache: { articleId: { title, summary } }
+  const [hindiCache, setHindiCache] = useState({});
+  const [isTranslating, setIsTranslating] = useState(false);
+
+  // Translate a single text string to Hindi using Google Translate free endpoint
+  const translateToHindi = async (text) => {
+    if (!text || !text.trim()) return text;
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=hi&dt=t&q=${encodeURIComponent(text)}`;
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (!res.ok) return text;
+      const data = await res.json();
+      // Response format: [ [ ["translated", "original"], ... ], ... ]
+      return data[0]?.map(chunk => chunk[0]).join('') || text;
+    } catch {
+      return text;
+    }
+  };
 
   // Auto scroll ads every 3 seconds
   useEffect(() => {
@@ -131,6 +152,10 @@ function Home({ selectedCategory, onSelectCategory, searchQuery, selectedDate, o
     return () => clearInterval(timer);
   }, []);
 
+  // Reset activeTab to 'all' whenever selectedCategory changes
+  useEffect(() => {
+    setActiveTab('all');
+  }, [selectedCategory]);
   // Fetch articles and bookmarks on mount
   useEffect(() => {
     const fetchArticles = async () => {
@@ -143,6 +168,7 @@ function Home({ selectedCategory, onSelectCategory, searchQuery, selectedDate, o
           const mapped = data.map(art => ({
             id: art.id,
             category: `${art.type.toUpperCase()} / ${art.category.toUpperCase()}`,
+            rawCategory: (art.category || '').toLowerCase(), // raw DB category for filtering
             title: art.title,
             summary: art.content,
             author: art.source_name || art.author_name || 'Haldwani Times',
@@ -228,8 +254,13 @@ function Home({ selectedCategory, onSelectCategory, searchQuery, selectedDate, o
   };
 
   const filteredArticles = articles.filter(art => {
-    // 0. Only show articles that have a valid native image URL
-    if (!art.image) {
+    // 0. Image check — Hindi News articles may not have images (allow them through)
+    const isHindiCategory = selectedCategory === 'Hindi News';
+    if (!art.image && !isHindiCategory) {
+      return false;
+    }
+    // For Hindi News, also allow articles whose rawCategory is 'hindi news'
+    if (!art.image && isHindiCategory && art.rawCategory !== 'hindi news') {
       return false;
     }
 
@@ -241,22 +272,39 @@ function Home({ selectedCategory, onSelectCategory, searchQuery, selectedDate, o
     // 2. Header Category filtering
     if (selectedCategory && selectedCategory !== 'All') {
       const catLower = selectedCategory.toLowerCase();
-      const artCatLower = art.category.toLowerCase();
-      
+      const rawCat = art.rawCategory || '';        // e.g. "uttarakhand", "politics", "india"
+      const titleLower = (art.title || '').toLowerCase();
+      const summaryLower = (art.summary || '').toLowerCase();
+
       if (catLower === 'uttarakhand') {
-        if (art.type !== 'local' && !artCatLower.includes('uttarakhand')) return false;
+        // local type OR raw category is uttarakhand OR title/summary mentions uttarakhand/haldwani
+        if (
+          art.type !== 'local' &&
+          !rawCat.includes('uttarakhand') &&
+          !titleLower.includes('uttarakhand') &&
+          !titleLower.includes('haldwani') &&
+          !titleLower.includes('kumaon') &&
+          !titleLower.includes('nainital') &&
+          !summaryLower.includes('uttarakhand') &&
+          !summaryLower.includes('haldwani')
+        ) return false;
       } else if (catLower === 'india') {
-        if (art.type !== 'national' && !artCatLower.includes('india')) return false;
+        if (art.type !== 'national' && !rawCat.includes('india') && !rawCat.includes('national')) return false;
       } else if (catLower === 'world') {
-        if (art.type !== 'international' && !artCatLower.includes('world')) return false;
+        if (art.type !== 'international' && !rawCat.includes('world') && !rawCat.includes('international')) return false;
       } else if (catLower === 'top stories') {
-        // Show all top/headlines
+        // Show all
       } else if (catLower === 'blog') {
-        if (art.type !== 'blog' && art.author === 'Editorial Team') return false;
+        if (art.type !== 'blog') return false;
       } else if (catLower === 'hindi news') {
-        if (!artCatLower.includes('hindi') && !artCatLower.includes('aaj tak') && !artCatLower.includes('amar ujala')) return false;
+        // Match articles whose rawCategory is 'hindi news' OR source is a known Hindi outlet
+        const hindiSources = ['aaj tak', 'amar ujala', 'dainik bhaskar', 'dainik jagran', 'navbharat times', 'patrika', 'google news hindi', 'google news uttarakhand hindi'];
+        const srcLower = (art.sourceName || '').toLowerCase();
+        const isHindiSource = hindiSources.some(s => srcLower.includes(s));
+        if (!rawCat.includes('hindi') && !isHindiSource) return false;
       } else {
-        if (!artCatLower.includes(catLower)) return false;
+        // For Politics, Business, Education, Food, Celebrity, Sports etc.
+        if (!rawCat.includes(catLower)) return false;
       }
     }
 
@@ -357,15 +405,65 @@ function Home({ selectedCategory, onSelectCategory, searchQuery, selectedDate, o
     return [...haldwani, ...uttarakhand, ...india];
   })();
 
-  // Hero article: prefer latest LOCAL news with a real image, fallback to first article with image
+  // Hero article: when a tab or category is selected, use first article from filtered set
+  // Otherwise prefer latest LOCAL news with a real image
   const heroArticle = (() => {
     if (activeTab !== 'all' || (selectedCategory && selectedCategory !== 'All')) {
-      return finalDisplayArticles.find(a => a.hasRealImage) || finalDisplayArticles[0];
+      // Use the first article from the filtered/categorised feed as hero
+      return finalDisplayArticles.find(a => a.hasRealImage) || finalDisplayArticles[0] || null;
     }
     const localWithImg = finalDisplayArticles.find(a => a.type === 'local' && a.hasRealImage);
     if (localWithImg) return localWithImg;
-    return finalDisplayArticles.find(a => a.hasRealImage) || finalDisplayArticles[0];
+    return finalDisplayArticles.find(a => a.hasRealImage) || finalDisplayArticles[0] || null;
   })();
+
+  // Auto-translate all articles to Hindi
+  const isHindiMode = selectedCategory === 'Hindi News';
+  // Track which article IDs have already been translated
+  const translatedIdsRef = React.useRef(new Set());
+  // Build a stable key from article IDs to trigger translation only when articles change
+  const articleIdsKey = finalDisplayArticles.map(a => a.id).join(',');
+
+  useEffect(() => {
+    if (finalDisplayArticles.length === 0) return;
+
+    const articlesToTranslate = finalDisplayArticles.filter(a => !translatedIdsRef.current.has(a.id)).slice(0, 12);
+    if (articlesToTranslate.length === 0) return;
+
+    let cancelled = false;
+    setIsTranslating(true);
+
+    // Translate in batches of 3 to avoid rate limiting
+    const batchSize = 3;
+    const batches = [];
+    for (let i = 0; i < articlesToTranslate.length; i += batchSize) {
+      batches.push(articlesToTranslate.slice(i, i + batchSize));
+    }
+
+    (async () => {
+      const newCache = {};
+      for (const batch of batches) {
+        if (cancelled) return;
+        await Promise.all(batch.map(async (art) => {
+          const [hindiTitle, hindiSummary] = await Promise.all([
+            translateToHindi(art.title),
+            translateToHindi(art.summary ? art.summary.slice(0, 300) : '')
+          ]);
+          newCache[art.id] = { title: hindiTitle, summary: hindiSummary };
+          translatedIdsRef.current.add(art.id);
+        }));
+        // Small delay between batches to avoid throttling
+        await new Promise(r => setTimeout(r, 300));
+      }
+      if (!cancelled) {
+        setHindiCache(prev => ({ ...prev, ...newCache }));
+        setIsTranslating(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [articleIdsKey]);
 
   const tickerItems = [
     { label: "SENSEX", value: "72,431.05", change: "+0.45%", isUp: true },
@@ -379,241 +477,170 @@ function Home({ selectedCategory, onSelectCategory, searchQuery, selectedDate, o
     { label: "CRUDE OIL", value: "78.26", change: "-0.75%", isUp: false },
   ];
 
+  // Return Hindi-translated article if available in cache, otherwise original
+  const getDisplayArticle = (art) => {
+    if (hindiCache[art.id]) {
+      return {
+        ...art,
+        title: hindiCache[art.id].title,
+        summary: hindiCache[art.id].summary
+      };
+    }
+    return art;
+  };
+
   return (
-    <div className="w-full pt-[148px] pb-10 flex flex-col gap-10">
-      
+    <div className="w-full pt-[148px] pb-10 flex flex-col gap-6 md:gap-10">
+
       {/* Stock / Finance Ticker Widget */}
-      <section className="w-full bg-white border-y border-outline-variant/20 overflow-hidden flex items-center select-none py-3.5">
+      <section className="w-full bg-white border-y border-outline-variant/20 overflow-hidden flex items-center select-none py-3">
         <div className="flex animate-marquee whitespace-nowrap gap-0">
-          
-          {/* First Set of Items */}
-          <div className="flex items-center gap-12 shrink-0 pr-12">
-            {tickerItems.map((item, index) => (
-              <React.Fragment key={`ticker-${index}`}>
-                <div className="flex items-center gap-3 text-xs md:text-sm">
-                  <span className="font-label-caps text-on-surface-variant font-extrabold tracking-wider text-[11px] md:text-xs">
-                    {item.label}
-                  </span>
-                  <span className="font-extrabold text-on-surface text-sm md:text-base">
-                    {item.value}
-                  </span>
-                  <span className={`${item.isUp ? 'text-secondary' : 'text-primary'} text-xs flex items-center font-bold`}>
-                    <span className="material-symbols-outlined text-sm md:text-base font-extrabold">
-                      {item.isUp ? 'trending_up' : 'trending_down'}
+          {[0, 1].map((clone) => (
+            <div key={clone} className="flex items-center gap-8 md:gap-12 shrink-0 pr-8 md:pr-12" aria-hidden={clone === 1 ? "true" : undefined}>
+              {tickerItems.map((item, index) => (
+                <React.Fragment key={`ticker-${clone}-${index}`}>
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <span className="font-label-caps text-on-surface-variant font-extrabold tracking-wider text-[10px] md:text-xs">{item.label}</span>
+                    <span className="font-extrabold text-on-surface text-xs md:text-sm">{item.value}</span>
+                    <span className={`${item.isUp ? 'text-secondary' : 'text-primary'} text-[10px] md:text-xs flex items-center font-bold`}>
+                      <span className="material-symbols-outlined text-sm font-extrabold">{item.isUp ? 'trending_up' : 'trending_down'}</span>
+                      <span className="ml-0.5">{item.change}</span>
                     </span>
-                    <span className="ml-1">{item.change}</span>
-                  </span>
-                </div>
-                <div className="w-px h-5 bg-outline-variant/40 shrink-0"></div>
-              </React.Fragment>
-            ))}
-          </div>
-
-          {/* Cloned Set for Seamless Infinite Scrolling */}
-          <div className="flex items-center gap-12 shrink-0 pr-12" aria-hidden="true">
-            {tickerItems.map((item, index) => (
-              <React.Fragment key={`ticker-clone-${index}`}>
-                <div className="flex items-center gap-3 text-xs md:text-sm">
-                  <span className="font-label-caps text-on-surface-variant font-extrabold tracking-wider text-[11px] md:text-xs">
-                    {item.label}
-                  </span>
-                  <span className="font-extrabold text-on-surface text-sm md:text-base">
-                    {item.value}
-                  </span>
-                  <span className={`${item.isUp ? 'text-secondary' : 'text-primary'} text-xs flex items-center font-bold`}>
-                    <span className="material-symbols-outlined text-sm md:text-base font-extrabold">
-                      {item.isUp ? 'trending_up' : 'trending_down'}
-                    </span>
-                    <span className="ml-1">{item.change}</span>
-                  </span>
-                </div>
-                <div className="w-px h-5 bg-outline-variant/40 shrink-0"></div>
-              </React.Fragment>
-            ))}
-          </div>
-
+                  </div>
+                  <div className="w-px h-4 bg-outline-variant/40 shrink-0"></div>
+                </React.Fragment>
+              ))}
+            </div>
+          ))}
         </div>
       </section>
 
       {/* Key Administrative Profiles Bar */}
-      <section className="w-full max-w-[1440px] mx-auto px-4 md:px-12 mt-4 select-none">
-        <div className="bg-[#f8fafc] border border-slate-200/60 rounded-3xl p-6 md:p-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 md:gap-8 shadow-sm">
-          
-          {/* PM Profile */}
-          <div className="flex flex-col items-center text-center bg-white border border-slate-100/80 p-5 rounded-2xl shadow-sm hover:shadow hover:-translate-y-1 transition-all duration-300 group">
-            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-primary/10 group-hover:border-primary/30 shadow-sm transition-all duration-300">
-              <img 
-                className="w-full h-full object-cover"
-                src="/modi.jpg"
-                alt="PM Narendra Modi"
-              />
+      <section className="w-full max-w-[1440px] mx-auto px-4 md:px-12 select-none">
+        {/* Mobile: horizontal scroll */}
+        <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1 md:hidden">
+          {[
+            { src: '/modi.jpg', name: 'Narendra Modi', role: 'PM of India' },
+            { src: '/governor.jpg', name: 'Lt. Gen. Gurmit Singh', role: 'Governor' },
+            { src: '/dhami.jpg', name: 'Pushkar S. Dhami', role: 'CM Uttarakhand' },
+            { src: '/dm.jpg', name: 'Lalit M. Rayal', role: 'DM Nainital' },
+            { src: '/mayor.jpg', name: 'Gajraj S. Bisht', role: 'Mayor Haldwani' },
+          ].map((p) => (
+            <div key={p.name} className="shrink-0 flex flex-col items-center text-center bg-white border border-slate-100 p-3 rounded-2xl shadow-sm w-[110px]">
+              <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-primary/10">
+                <img className="w-full h-full object-cover" src={p.src} alt={p.name} />
+              </div>
+              <h4 className="text-[10px] font-semibold text-slate-800 mt-2 leading-tight">{p.name}</h4>
+              <span className="text-[9px] text-slate-400 uppercase tracking-wide mt-0.5">{p.role}</span>
             </div>
-            <h4 className="text-sm font-normal text-slate-800 tracking-tight mt-4 leading-none">Narendra Modi</h4>
-            <span className="text-[10px] text-slate-400 font-normal uppercase tracking-wider block mt-2">PM of India</span>
-          </div>
-
-          {/* Governor Profile */}
-          <div className="flex flex-col items-center text-center bg-white border border-slate-100/80 p-5 rounded-2xl shadow-sm hover:shadow hover:-translate-y-1 transition-all duration-300 group">
-            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-primary/10 group-hover:border-primary/30 shadow-sm transition-all duration-300">
-              <img 
-                className="w-full h-full object-cover"
-                src="/governor.jpg"
-                alt="Governor Gurmit Singh"
-              />
+          ))}
+        </div>
+        {/* Desktop: grid */}
+        <div className="hidden md:grid md:grid-cols-3 lg:grid-cols-5 gap-6 bg-[#f8fafc] border border-slate-200/60 rounded-3xl p-6 md:p-8 shadow-sm">
+          {[
+            { src: '/modi.jpg', name: 'Narendra Modi', role: 'PM of India' },
+            { src: '/governor.jpg', name: 'Lt. Gen. Gurmit Singh', role: 'Governor of UK' },
+            { src: '/dhami.jpg', name: 'Pushkar S. Dhami', role: 'CM of Uttarakhand' },
+            { src: '/dm.jpg', name: 'Lalit M. Rayal', role: 'DM of Nainital' },
+            { src: '/mayor.jpg', name: 'Gajraj S. Bisht', role: 'Mayor of Haldwani' },
+          ].map((p) => (
+            <div key={p.name} className="flex flex-col items-center text-center bg-white border border-slate-100/80 p-5 rounded-2xl shadow-sm hover:shadow hover:-translate-y-1 transition-all duration-300 group">
+              <div className="w-20 h-20 lg:w-24 lg:h-24 rounded-full overflow-hidden border-4 border-primary/10 group-hover:border-primary/30 shadow-sm transition-all duration-300">
+                <img className="w-full h-full object-cover" src={p.src} alt={p.name} />
+              </div>
+              <h4 className="text-sm font-normal text-slate-800 tracking-tight mt-3 leading-snug">{p.name}</h4>
+              <span className="text-[10px] text-slate-400 font-normal uppercase tracking-wider block mt-1">{p.role}</span>
             </div>
-            <h4 className="text-sm font-normal text-slate-800 tracking-tight mt-4 leading-none">Lt. Gen. Gurmit Singh</h4>
-            <span className="text-[10px] text-slate-400 font-normal uppercase tracking-wider block mt-2">Governor of UK</span>
-          </div>
-
-          {/* CM Profile */}
-          <div className="flex flex-col items-center text-center bg-white border border-slate-100/80 p-5 rounded-2xl shadow-sm hover:shadow hover:-translate-y-1 transition-all duration-300 group">
-            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-primary/10 group-hover:border-primary/30 shadow-sm transition-all duration-300">
-              <img 
-                className="w-full h-full object-cover"
-                src="/dhami.jpg"
-                alt="CM Pushkar S. Dhami"
-              />
-            </div>
-            <h4 className="text-sm font-normal text-slate-800 tracking-tight mt-4 leading-none">Pushkar S. Dhami</h4>
-            <span className="text-[10px] text-slate-400 font-normal uppercase tracking-wider block mt-2">CM of Uttarakhand</span>
-          </div>
-
-          {/* DM Profile */}
-          <div className="flex flex-col items-center text-center bg-white border border-slate-100/80 p-5 rounded-2xl shadow-sm hover:shadow hover:-translate-y-1 transition-all duration-300 group">
-            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-primary/10 group-hover:border-primary/30 shadow-sm transition-all duration-300">
-              <img 
-                className="w-full h-full object-cover"
-                src="/dm.jpg"
-                alt="DM Lalit M. Rayal"
-              />
-            </div>
-            <h4 className="text-sm font-normal text-slate-800 tracking-tight mt-4 leading-none">Lalit M. Rayal</h4>
-            <span className="text-[10px] text-slate-400 font-normal uppercase tracking-wider block mt-2">DM of Nainital</span>
-          </div>
-
-          {/* Mayor Profile */}
-          <div className="flex flex-col items-center text-center bg-white border border-slate-100/80 p-5 rounded-2xl shadow-sm hover:shadow hover:-translate-y-1 transition-all duration-300 group">
-            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-primary/10 group-hover:border-primary/30 shadow-sm transition-all duration-300">
-              <img 
-                className="w-full h-full object-cover"
-                src="/mayor.jpg"
-                alt="Mayor Gajraj S. Bisht"
-              />
-            </div>
-            <h4 className="text-sm font-normal text-slate-800 tracking-tight mt-4 leading-none">Gajraj S. Bisht</h4>
-            <span className="text-[10px] text-slate-400 font-normal uppercase tracking-wider block mt-2">Mayor of Haldwani</span>
-          </div>
-
+          ))}
         </div>
       </section>
 
       {/* Full Width Advertisement Banner Slider */}
-      <section className="w-full max-w-[1440px] mx-auto px-4 md:px-12 mt-4 select-none">
-        <div className="relative w-full h-[180px] md:h-[220px] rounded-3xl overflow-hidden shadow-sm group">
-          
-          {/* Slides Container */}
+      <section className="w-full max-w-[1440px] mx-auto px-4 md:px-12 select-none">
+        <div className="relative w-full h-[140px] sm:h-[180px] md:h-[220px] rounded-2xl md:rounded-3xl overflow-hidden shadow-sm group">
           <div className="absolute inset-0 w-full h-full flex transition-transform duration-700 ease-in-out"
                style={{ transform: `translateX(-${currentAdIndex * 100}%)` }}>
             {ads.map((ad) => (
               <div key={ad.id} className="relative w-full h-full shrink-0">
-                <img 
-                  className="w-full h-full object-cover"
-                  src={ad.image}
-                  alt={ad.title}
-                />
-                {/* Soft dark overlay */}
+                <img className="w-full h-full object-cover" src={ad.image} alt={ad.title} />
                 <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/40 to-transparent"></div>
-                
-                {/* Advertisement Text Details */}
-                <div className="absolute inset-y-0 left-0 flex flex-col justify-center px-8 md:px-16 text-white max-w-[85%] md:max-w-[50%]">
-                  <span className="bg-primary/95 text-[10px] text-white font-normal uppercase tracking-widest px-2.5 py-1 rounded-md w-max mb-3 shadow-sm">
-                    Sponsored Ad
-                  </span>
-                  <h3 className="text-xl md:text-2xl font-normal tracking-tight leading-tight mb-2">
-                    {ad.title}
-                  </h3>
-                  <p className="text-xs md:text-sm text-slate-200/90 leading-relaxed font-normal">
-                    {ad.desc}
-                  </p>
+                <div className="absolute inset-y-0 left-0 flex flex-col justify-center px-5 sm:px-8 md:px-16 text-white max-w-[90%] md:max-w-[55%]">
+                  <span className="bg-primary/95 text-[9px] text-white font-normal uppercase tracking-widest px-2 py-0.5 rounded w-max mb-2 shadow-sm">Sponsored Ad</span>
+                  <h3 className="text-base sm:text-xl md:text-2xl font-normal tracking-tight leading-tight mb-1">{ad.title}</h3>
+                  <p className="hidden sm:block text-xs md:text-sm text-slate-200/90 leading-relaxed font-normal">{ad.desc}</p>
                 </div>
               </div>
             ))}
           </div>
-
-          {/* Navigation Dot Indicators */}
-          <div className="absolute bottom-4 right-8 flex gap-2">
+          <div className="absolute bottom-3 right-4 flex gap-1.5">
             {ads.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => setCurrentAdIndex(idx)}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  currentAdIndex === idx ? 'bg-primary w-5' : 'bg-white/60 hover:bg-white'
-                }`}
-                aria-label={`Go to slide ${idx + 1}`}
-              />
+              <button key={idx} onClick={() => setCurrentAdIndex(idx)}
+                className={`h-1.5 rounded-full transition-all duration-300 ${currentAdIndex === idx ? 'bg-primary w-5' : 'w-1.5 bg-white/60 hover:bg-white'}`}
+                aria-label={`Go to slide ${idx + 1}`} />
             ))}
           </div>
-
         </div>
       </section>
 
       {/* Main content grid wrapped in restricted width container */}
-      <div className="w-full max-w-[1440px] mx-auto px-4 md:px-12 flex flex-col gap-10">
+      <div className="w-full max-w-[1440px] mx-auto px-4 md:px-12 flex flex-col gap-6 md:gap-10">
 
         {/* Loading / Empty States */}
         {isLoading ? (
           <div className="text-center py-20 flex flex-col items-center gap-4">
             <div className="w-12 h-12 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
-            <span className="font-bold text-sm text-slate-500 uppercase tracking-widest">Compiling News Stream...</span>
+            <span className="font-bold text-sm text-slate-500 uppercase tracking-widest">समाचार लोड हो रहा है...</span>
           </div>
         ) : (
           <>
-            {heroArticle && (
+            {heroArticle && (() => {
+              const display = getDisplayArticle(heroArticle);
+              return (
               <section 
                 onClick={() => onSelectArticle && onSelectArticle(heroArticle)}
-                className="group relative overflow-hidden rounded-[18px] bg-white card-shadow border border-outline-variant/10 transition-all duration-500 hover:-translate-y-1 cursor-pointer"
+                className="group relative overflow-hidden rounded-2xl md:rounded-[18px] bg-white card-shadow border border-outline-variant/10 transition-all duration-500 hover:-translate-y-1 cursor-pointer"
               >
                 <div className="grid grid-cols-1 lg:grid-cols-2">
                   
-                  <div className="h-[300px] md:h-[400px] lg:h-[480px] relative overflow-hidden">
+                  <div className="h-[220px] sm:h-[300px] md:h-[380px] lg:h-[480px] relative overflow-hidden">
                     <img 
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                      src={heroArticle.image}
-                      alt={heroArticle.title}
+                      src={display.image}
+                      alt={display.title}
                     />
-                    <div className="absolute top-4 left-4 bg-primary text-on-primary px-3 py-1.5 rounded-full flex items-center gap-1.5 font-label-caps text-[10px] md:text-xs shadow-lg select-none">
-                      <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span> BREAKING NEWS
+                    <div className="absolute top-3 left-3 bg-primary text-on-primary px-2.5 py-1 rounded-full flex items-center gap-1.5 font-label-caps text-[9px] md:text-xs shadow-lg select-none">
+                      <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
+                      ताज़ा खबर
                     </div>
                   </div>
 
-                  <div className="p-8 lg:p-12 flex flex-col justify-center bg-white border-l-0 rounded-r-[18px]">
-                    <span className="font-label-caps text-xs text-primary mb-4 tracking-widest block font-bold uppercase">{heroArticle.category}</span>
-                    <h1 className="font-serif text-2xl md:text-4xl mb-6 font-bold leading-tight text-[#191c1e]">
-                      {heroArticle.title}
+                  <div className="p-5 sm:p-8 lg:p-12 flex flex-col justify-center bg-white">
+                    <span className="font-label-caps text-xs text-primary mb-3 tracking-widest block font-bold uppercase">{display.category}</span>
+                    <h1 className={`font-serif text-xl sm:text-2xl md:text-3xl lg:text-4xl mb-4 md:mb-6 font-bold leading-tight text-[#191c1e] ${isHindiMode ? 'leading-relaxed' : ''}`}>
+                      {display.title}
                     </h1>
-                    <p className="font-body-md text-sm md:text-base text-on-surface-variant mb-8 leading-relaxed">
-                      {heroArticle.summary}
+                    <p className="font-body-md text-sm text-on-surface-variant mb-5 md:mb-8 leading-relaxed line-clamp-3 md:line-clamp-none">
+                      {display.summary}
                     </p>
                     
-                    <div className="flex items-center justify-between mt-auto pt-6 border-t border-outline-variant/20">
-                      
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-primary border border-outline-variant/30 uppercase select-none">
-                          {(heroArticle.sourceName || heroArticle.author || 'HT').slice(0, 2)}
+                    <div className="flex items-center justify-between mt-auto pt-4 md:pt-6 border-t border-outline-variant/20">
+                      <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                        <div className="w-8 h-8 md:w-10 md:h-10 shrink-0 rounded-full bg-slate-100 flex items-center justify-center font-bold text-primary border border-outline-variant/30 uppercase select-none text-xs">
+                          {(display.sourceName || display.author || 'HT').slice(0, 2)}
                         </div>
-                        <div>
-                          <p className="font-metadata text-xs md:text-metadata font-bold">{heroArticle.sourceName || heroArticle.author}</p>
-                          <p className="text-[10px] md:text-[11px] text-on-surface-variant font-medium">
-                            {heroArticle.sourceName ? `Aggregated by Haldwani Times` : 'Haldwani Times'}
+                        <div className="min-w-0">
+                          <p className="font-metadata text-xs font-bold truncate">{display.sourceName || display.author}</p>
+                          <p className="text-[10px] text-on-surface-variant font-medium hidden sm:block">
+                            {display.sourceName ? 'हल्द्वानी टाइम्स द्वारा संकलित' : 'हल्द्वानी टाइम्स'}
                           </p>
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 shrink-0">
                         {(!currentUser || currentUser.role === 'user') && (
                           <button 
                             onClick={(e) => handleToggleBookmark(e, heroArticle.id)}
-                            className="flex items-center justify-center p-2.5 rounded-full hover:bg-surface-container-low transition-colors text-on-surface-variant hover:text-primary"
+                            className="p-2 rounded-full hover:bg-surface-container-low transition-colors text-on-surface-variant hover:text-primary"
                           >
                             <span className="material-symbols-outlined text-lg md:text-xl">
                               {bookmarkedIds.includes(heroArticle.id) ? 'bookmark' : 'bookmark_border'}
@@ -622,78 +649,90 @@ function Home({ selectedCategory, onSelectCategory, searchQuery, selectedDate, o
                         )}
                         <button 
                           onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                          className="flex items-center justify-center p-2.5 rounded-full hover:bg-surface-container-low transition-colors text-on-surface-variant hover:text-primary"
+                          className="p-2 rounded-full hover:bg-surface-container-low transition-colors text-on-surface-variant hover:text-primary"
                         >
                           <span className="material-symbols-outlined text-lg md:text-xl">share</span>
                         </button>
                       </div>
-
                     </div>
                   </div>
 
                 </div>
               </section>
+              );
+            })()}
+
+            {/* Translation progress indicator */}
+            {isTranslating && (
+              <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 border border-amber-200/60 rounded-xl text-amber-700 text-xs font-semibold animate-pulse">
+                <span className="material-symbols-outlined text-sm animate-spin">translate</span>
+                हिंदी में अनुवाद हो रहा है...
+              </div>
             )}
 
             {/* Aggregator Navigation / Tabs Bar */}
-            <section className="border-b border-black/10 pb-2 mt-4">
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <div className="flex items-center gap-4 md:gap-8 font-bold text-sm md:text-base text-on-surface-variant select-none">
+            <section className="border-b border-black/10 pb-1 mt-2 md:mt-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 sm:gap-6 md:gap-8 font-bold text-xs sm:text-sm text-on-surface-variant select-none overflow-x-auto no-scrollbar pb-2 flex-1">
                   <button 
-                    onClick={() => setActiveTab('all')}
-                    className={`pb-3 transition-colors relative font-extrabold ${activeTab === 'all' ? 'text-primary' : 'hover:text-primary'}`}
+                    onClick={() => { setActiveTab('all'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    className={`shrink-0 pb-1 relative font-extrabold whitespace-nowrap ${activeTab === 'all' ? 'text-primary' : 'hover:text-primary'}`}
                   >
-                    <span>All Headlines</span>
+                    सभी सुर्खियाँ
                     {activeTab === 'all' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary"></div>}
                   </button>
                   <button 
-                    onClick={() => setActiveTab('local')}
-                    className={`pb-3 transition-colors relative font-extrabold flex items-center gap-1.5 ${activeTab === 'local' ? 'text-primary' : 'hover:text-primary'}`}
+                    onClick={() => { setActiveTab('local'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    className={`shrink-0 pb-1 relative font-extrabold flex items-center gap-1 whitespace-nowrap ${activeTab === 'local' ? 'text-primary' : 'hover:text-primary'}`}
                   >
-                    <span className="material-symbols-outlined text-lg">location_on</span>
-                    <span>Local News (Haldwani)</span>
+                    <span className="material-symbols-outlined text-base">location_on</span>
+                    <span className="hidden sm:inline">स्थानीय समाचार (हल्द्वानी)</span>
+                    <span className="sm:hidden">स्थानीय</span>
                     {activeTab === 'local' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary"></div>}
                   </button>
                   <button 
-                    onClick={() => setActiveTab('national')}
-                    className={`pb-3 transition-colors relative font-extrabold flex items-center gap-1.5 ${activeTab === 'national' ? 'text-primary' : 'hover:text-primary'}`}
+                    onClick={() => { setActiveTab('national'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    className={`shrink-0 pb-1 relative font-extrabold flex items-center gap-1 whitespace-nowrap ${activeTab === 'national' ? 'text-primary' : 'hover:text-primary'}`}
                   >
-                    <span className="material-symbols-outlined text-lg">flag</span>
-                    <span>National (India)</span>
+                    <span className="material-symbols-outlined text-base">flag</span>
+                    <span className="hidden sm:inline">राष्ट्रीय (भारत)</span>
+                    <span className="sm:hidden">राष्ट्रीय</span>
                     {activeTab === 'national' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary"></div>}
                   </button>
                   <button 
-                    onClick={() => setActiveTab('international')}
-                    className={`pb-3 transition-colors relative font-extrabold flex items-center gap-1.5 ${activeTab === 'international' ? 'text-primary' : 'hover:text-primary'}`}
+                    onClick={() => { setActiveTab('international'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    className={`shrink-0 pb-1 relative font-extrabold flex items-center gap-1 whitespace-nowrap ${activeTab === 'international' ? 'text-primary' : 'hover:text-primary'}`}
                   >
-                    <span className="material-symbols-outlined text-lg">public</span>
-                    <span>International (World)</span>
+                    <span className="material-symbols-outlined text-base">public</span>
+                    <span className="hidden sm:inline">अंतर्राष्ट्रीय (विश्व)</span>
+                    <span className="sm:hidden">विश्व</span>
                     {activeTab === 'international' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary"></div>}
                   </button>
                 </div>
                 
-                <div className="text-xs text-on-surface-variant font-bold select-none">
-                  Showing {finalDisplayArticles.length} aggregated stories
+                <div className="text-[10px] md:text-xs text-on-surface-variant font-bold select-none shrink-0 hidden sm:block">
+                  {finalDisplayArticles.length} खबरें
                 </div>
               </div>
             </section>
 
             {/* Main Aggregator Feed: Responsive Grid */}
             {finalDisplayArticles.length === 0 ? (
-              <div className="text-center py-16 bg-[#f8fafc] rounded-3xl border border-slate-200/60 my-6 col-span-full">
-                <span className="material-symbols-outlined text-5xl text-slate-400 mb-3 block">search_off</span>
-                <h3 className="text-lg font-bold text-slate-700">No News Found</h3>
-                <p className="text-sm text-slate-400 mt-1">We couldn't find any articles matching your filters. Try choosing another category or clearing search filters.</p>
+              <div className="text-center py-12 md:py-16 bg-[#f8fafc] rounded-2xl md:rounded-3xl border border-slate-200/60 my-4">
+                <span className="material-symbols-outlined text-4xl md:text-5xl text-slate-400 mb-3 block">search_off</span>
+                <h3 className="text-base md:text-lg font-bold text-slate-700">कोई समाचार नहीं मिला</h3>
+                <p className="text-xs md:text-sm text-slate-400 mt-1 px-6">आपके फ़िल्टर से मेल खाने वाला कोई लेख नहीं मिला। कोई अन्य श्रेणी चुनें या खोज फ़िल्टर हटाएँ।</p>
               </div>
             ) : (
-              <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {finalDisplayArticles.map((article) => (
+              <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
+                {finalDisplayArticles.map((article) => {
+                  const display = getDisplayArticle(article);
+                  return (
                   <article 
                     key={article.id}
                     onClick={() => onSelectArticle && onSelectArticle(article)}
-                    className="bg-white rounded-[18px] card-shadow border border-outline-variant/10 overflow-hidden group h-fit transition-all hover:-translate-y-1 relative cursor-pointer"
+                    className="bg-white rounded-2xl md:rounded-[18px] card-shadow border border-outline-variant/10 overflow-hidden group h-fit transition-all hover:-translate-y-1 relative cursor-pointer"
                   >
-                    {/* Bookmark floating button */}
                     {(!currentUser || currentUser.role === 'user') && (
                       <button
                         onClick={(e) => handleToggleBookmark(e, article.id)}
@@ -705,40 +744,41 @@ function Home({ selectedCategory, onSelectCategory, searchQuery, selectedDate, o
                       </button>
                     )}
 
-                    <div className="h-52 relative overflow-hidden">
+                    <div className="h-44 sm:h-48 md:h-52 relative overflow-hidden">
                       <img 
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
-                        src={article.image} 
-                        alt={article.title}
+                        src={display.image} 
+                        alt={display.title}
                       />
-                      <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-lg font-label-caps text-[9px] font-bold text-on-surface uppercase select-none">
-                        {article.category}
+                      <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-md font-label-caps text-[9px] font-bold text-on-surface uppercase select-none">
+                        {display.category}
                       </div>
                     </div>
-                    <div className="p-6 flex flex-col gap-3">
-                      <h3 className="font-serif text-lg md:text-xl font-bold leading-snug group-hover:text-primary transition-colors text-[#191c1e]">
-                        {article.title}
+                    <div className="p-4 md:p-6 flex flex-col gap-2 md:gap-3">
+                      <h3 className="font-serif text-base md:text-lg lg:text-xl font-bold leading-snug group-hover:text-primary transition-colors text-[#191c1e]">
+                        {display.title}
                       </h3>
-                      <p className="font-body-md text-xs md:text-sm text-on-surface-variant line-clamp-3 leading-relaxed">
-                        {article.summary}
+                      <p className="font-body-md text-xs md:text-sm text-on-surface-variant line-clamp-2 md:line-clamp-3 leading-relaxed">
+                        {display.summary}
                       </p>
                       
-                      <div className="flex flex-col gap-2 border-t border-outline-variant/10 pt-4 mt-2">
+                      <div className="flex flex-col gap-1 md:gap-2 border-t border-outline-variant/10 pt-3 md:pt-4 mt-1 md:mt-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-on-surface-variant font-bold">{article.sourceName || article.author}</span>
-                          <span className="text-xs text-on-surface-variant flex items-center gap-1 font-semibold">
-                            <span className="material-symbols-outlined text-base">schedule</span> {article.readTime}
+                          <span className="text-[11px] md:text-xs text-on-surface-variant font-bold truncate mr-2">{display.sourceName || display.author}</span>
+                          <span className="text-[11px] md:text-xs text-on-surface-variant flex items-center gap-0.5 font-semibold shrink-0">
+                            <span className="material-symbols-outlined text-sm">schedule</span> {display.readTime}
                           </span>
                         </div>
-                        {article.sourceName && (
-                          <div className="text-[10px] text-slate-400 italic font-medium">
-                            Aggregated by Haldwani Times from {article.sourceName}
+                        {display.sourceName && (
+                          <div className="text-[9px] md:text-[10px] text-slate-400 italic font-medium">
+                            {`${display.sourceName} से संकलित`}
                           </div>
                         )}
                       </div>
                     </div>
                   </article>
-                ))}
+                  );
+                })}
               </section>
             )}
           </>

@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 
 function ArticleDetail({ article, onClose, onSelectArticle, allArticles }) {
   const [commentInput, setCommentInput] = useState('');
+  const [hindiTitle, setHindiTitle] = useState('');
+  const [hindiSummary, setHindiSummary] = useState('');
+  const [hindiParagraphs, setHindiParagraphs] = useState([]);
+  const [isTranslating, setIsTranslating] = useState(false);
   const [comments, setComments] = useState([
     {
       id: 1,
@@ -19,11 +23,73 @@ function ArticleDetail({ article, onClose, onSelectArticle, allArticles }) {
     }
   ]);
 
+  // Google Translate helper
+  const translateToHindi = async (text) => {
+    if (!text || !text.trim()) return text;
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=hi&dt=t&q=${encodeURIComponent(text)}`;
+      const res = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (!res.ok) return text;
+      const data = await res.json();
+      return data[0]?.map(chunk => chunk[0]).join('') || text;
+    } catch {
+      return text;
+    }
+  };
+
   // Scroll to top on mount or when article changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [article]);
 
+  // Translate article content to Hindi
+  useEffect(() => {
+    if (!article) return;
+    setIsTranslating(true);
+    setHindiTitle('');
+    setHindiSummary('');
+    setHindiParagraphs([]);
+
+    (async () => {
+      try {
+        const [tTitle, tSummary] = await Promise.all([
+          translateToHindi(article.title),
+          translateToHindi(article.summary ? article.summary.slice(0, 400) : '')
+        ]);
+        setHindiTitle(tTitle);
+        setHindiSummary(tSummary);
+
+        // Get enriched paragraphs and translate them
+        const enriched = getEnrichedParagraphs(article.title, article.category, article.summary);
+        const translatedParas = [];
+        for (const para of enriched) {
+          if (para && para.isQuote) {
+            const tText = await translateToHindi(para.text);
+            translatedParas.push({ isQuote: true, text: tText });
+          } else if (typeof para === 'string') {
+            // Translate in chunks to avoid URL length limits
+            const chunks = para.match(/.{1,500}/gs) || [para];
+            const translated = [];
+            for (const chunk of chunks) {
+              translated.push(await translateToHindi(chunk));
+            }
+            translatedParas.push(translated.join(''));
+          } else {
+            translatedParas.push(para);
+          }
+        }
+        setHindiParagraphs(translatedParas);
+      } catch (err) {
+        console.error('Translation error:', err);
+      } finally {
+        setIsTranslating(false);
+      }
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [article?.id]);
   if (!article) return null;
 
   // Get enriched paragraphs to show more content if the original description is short
@@ -146,7 +212,9 @@ function ArticleDetail({ article, onClose, onSelectArticle, allArticles }) {
     return paragraphsList;
   };
 
-  const enrichedParagraphs = getEnrichedParagraphs(article.title, article.category, article.summary);
+  const enrichedParagraphs = hindiParagraphs.length > 0 ? hindiParagraphs : getEnrichedParagraphs(article.title, article.category, article.summary);
+  const displayTitle = hindiTitle || article.title;
+  const displaySummary = hindiSummary || article.summary;
 
   // Find related articles (same category or type, excluding current article)
   const related = allArticles
@@ -184,35 +252,35 @@ function ArticleDetail({ article, onClose, onSelectArticle, allArticles }) {
   };
 
   return (
-    <div className="w-full pt-[148px] pb-24 bg-background font-body-md text-on-background selection:bg-primary-fixed selection:text-on-primary-fixed">
+    <div className="w-full pt-[148px] pb-16 md:pb-24 bg-background font-body-md text-on-background selection:bg-primary-fixed selection:text-on-primary-fixed">
       
       {/* Navigation / Back Button */}
-      <div className="max-w-4xl mx-auto px-6 lg:px-12 mb-6">
+      <div className="max-w-4xl mx-auto px-4 md:px-6 lg:px-12 mb-4 md:mb-6">
         <button 
           onClick={onClose}
-          className="flex items-center gap-2 text-on-surface hover:text-primary transition-all font-bold tracking-wider text-xs md:text-sm bg-white px-5 py-2.5 rounded-full shadow-sm hover:shadow border border-outline-variant/10 group cursor-pointer"
+          className="flex items-center gap-2 text-on-surface hover:text-primary transition-all font-bold tracking-wider text-xs md:text-sm bg-white px-4 md:px-5 py-2 md:py-2.5 rounded-full shadow-sm hover:shadow border border-outline-variant/10 group cursor-pointer"
         >
           <span className="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
-          <span>BACK TO FEED</span>
+          <span>वापस जाएं</span>
         </button>
       </div>
 
       {/* Hero Section */}
-      <header className="w-full relative h-[500px] md:h-[614px] min-h-[400px] overflow-hidden group max-w-container-max mx-auto md:rounded-3xl shadow-sm border border-outline-variant/10">
+      <header className="w-full relative h-[240px] sm:h-[360px] md:h-[480px] lg:h-[614px] overflow-hidden group max-w-container-max mx-auto md:rounded-3xl shadow-sm border border-outline-variant/10">
         <img 
           className="w-full h-full object-cover transform scale-105 group-hover:scale-100 transition-transform duration-1000 ease-out" 
           src={article.image} 
           alt={article.title} 
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent"></div>
-        <div className="absolute bottom-0 left-0 w-full p-6 lg:p-12 max-w-4xl">
-          <nav className="flex items-center gap-2 mb-4 font-label-caps text-label-caps text-primary uppercase font-bold tracking-widest">
+        <div className="absolute bottom-0 left-0 w-full p-4 sm:p-6 lg:p-12 max-w-4xl">
+          <nav className="flex items-center gap-2 mb-2 md:mb-4 font-label-caps text-label-caps text-primary uppercase font-bold tracking-widest">
             <span>{article.type}</span>
             <span className="w-1.5 h-1.5 bg-primary rounded-full"></span>
             <span>{article.category.split('/')[1] || article.category}</span>
           </nav>
           <h1 className="font-display-hero text-headline-lg-mobile md:text-display-hero text-on-surface leading-tight mb-6">
-            {article.title}
+            {displayTitle}
           </h1>
         </div>
       </header>
@@ -232,11 +300,11 @@ function ArticleDetail({ article, onClose, onSelectArticle, allArticles }) {
               <div>
                 <p className="font-headline-md text-metadata text-on-surface font-bold">{article.sourceName || article.author}</p>
                 <div className="flex items-center gap-2 font-metadata text-[12px] text-on-surface-variant">
-                  <span>Aggregated by Haldwani Times</span>
+                  <span>हल्द्वानी टाइम्स द्वारा संकलित</span>
                   <span className="w-1 h-1 bg-outline rounded-full"></span>
                   <span>{formatDate(article.createdAt)}</span>
                   <span className="w-1 h-1 bg-outline rounded-full"></span>
-                  <span className="text-primary font-bold">5-MIN READ</span>
+                  <span className="text-primary font-bold">5 मिनट पढ़ें</span>
                 </div>
               </div>
             </div>
@@ -250,7 +318,7 @@ function ArticleDetail({ article, onClose, onSelectArticle, allArticles }) {
                   className="px-5 py-2.5 rounded-full bg-secondary-container text-on-secondary-container font-label-caps text-label-caps flex items-center gap-2 hover:opacity-90 transition-all font-bold"
                 >
                   <span className="material-symbols-outlined text-sm">open_in_new</span>
-                  <span>VIEW SOURCE</span>
+                  <span>स्रोत देखें</span>
                 </a>
               )}
               <button className="w-10 h-10 rounded-full border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:border-primary hover:text-primary transition-all">
@@ -263,6 +331,12 @@ function ArticleDetail({ article, onClose, onSelectArticle, allArticles }) {
           </div>
 
           {/* Body Content */}
+          {isTranslating && (
+            <div className="flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-200/60 rounded-xl text-amber-700 text-sm font-semibold animate-pulse mb-6">
+              <span className="material-symbols-outlined text-base animate-spin">translate</span>
+              हिंदी में अनुवाद हो रहा है...
+            </div>
+          )}
           <article className="prose prose-lg max-w-none font-body-lg text-body-lg text-on-surface-variant space-y-8 leading-relaxed">
             <p className="first-letter:text-5xl first-letter:font-extrabold first-letter:text-primary first-letter:mr-3 first-letter:float-left first-letter:leading-none">
               {typeof enrichedParagraphs[0] === 'string' ? enrichedParagraphs[0] : enrichedParagraphs[0].text}
@@ -289,9 +363,9 @@ function ArticleDetail({ article, onClose, onSelectArticle, allArticles }) {
           {/* Attribution Notice */}
           {article.sourceName && (
             <div className="mt-10 p-5 bg-slate-50 rounded-2xl border border-slate-200/50 text-xs text-slate-500 flex items-center justify-between">
-              <span className="italic">This news is aggregated by <strong>Haldwani Times</strong> from <strong>{article.sourceName}</strong>. All copyrights belong to the respective publisher.</span>
+              <span className="italic">यह समाचार <strong>हल्द्वानी टाइम्स</strong> द्वारा <strong>{article.sourceName}</strong> से संकलित है। सभी कॉपीराइट संबंधित प्रकाशक के हैं।</span>
               {article.sourceUrl && (
-                <a href={article.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-primary font-bold hover:underline not-italic shrink-0 ml-4">Visit Publisher &rarr;</a>
+                <a href={article.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-primary font-bold hover:underline not-italic shrink-0 ml-4">प्रकाशक देखें &rarr;</a>
               )}
             </div>
           )}
@@ -302,7 +376,7 @@ function ArticleDetail({ article, onClose, onSelectArticle, allArticles }) {
         <section className="mt-12 bg-surface-container-lowest rounded-3xl p-8 lg:p-12 editorial-shadow border border-outline-variant/10">
           <div className="flex items-center justify-between mb-8 border-b border-outline-variant/20 pb-4">
             <h3 className="font-headline-lg text-headline-lg text-on-surface font-serif">
-              Reflections <span className="text-on-surface-variant font-normal opacity-50 text-headline-md">({comments.length})</span>
+              प्रतिक्रियाएँ <span className="text-on-surface-variant font-normal opacity-50 text-headline-md">({comments.length})</span>
             </h3>
           </div>
 
@@ -341,7 +415,7 @@ function ArticleDetail({ article, onClose, onSelectArticle, allArticles }) {
               type="text" 
               value={commentInput}
               onChange={(e) => setCommentInput(e.target.value)}
-              placeholder="Share your perspective..." 
+              placeholder="अपना विचार साझा करें..." 
               className="flex-1 bg-transparent border-none focus:ring-0 text-sm outline-none placeholder-on-surface-variant/50 p-1"
             />
             <button 
@@ -357,7 +431,7 @@ function ArticleDetail({ article, onClose, onSelectArticle, allArticles }) {
         {related.length > 0 && (
           <section className="mt-16">
             <div className="flex items-center justify-between mb-8">
-              <h3 className="font-headline-lg text-headline-lg text-on-surface font-serif">Curated for You</h3>
+              <h3 className="font-headline-lg text-headline-lg text-on-surface font-serif">आपके लिए चुने गए</h3>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

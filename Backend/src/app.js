@@ -1,6 +1,7 @@
 import express from 'express';
 import authRoutes from './routes/auth.js';
 import articleRoutes from './routes/articles.js';
+import { performNewsSync } from './services/newsSync.js';
 
 const app = express();
 
@@ -22,6 +23,12 @@ app.use(express.urlencoded({ extended: true }));
 // Register API routers
 app.use('/api/auth', authRoutes);
 app.use('/api/articles', articleRoutes);
+
+// Manual news sync trigger (for dev/testing)
+app.post('/api/admin/sync-now', async (req, res) => {
+  res.json({ message: 'News sync started in background...' });
+  performNewsSync().catch(err => console.error('[ManualSync] Error:', err.message));
+});
 
 // Basic health/status route
 app.get('/', (req, res) => {

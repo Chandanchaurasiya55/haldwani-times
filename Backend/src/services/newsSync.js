@@ -85,6 +85,9 @@ function parseRssFeeds(xmlText) {
 
 // Helper to map dynamic categories based on article context
 function detectCategory(title, description, fallbackCategory) {
+  // If the fallback is already 'Hindi News', preserve it — don't override
+  if (fallbackCategory === 'Hindi News') return 'Hindi News';
+
   const text = `${title || ''} ${description || ''}`.toLowerCase();
   
   if (text.includes('business') || text.includes('economy') || text.includes('finance') || text.includes('market') || text.includes('stock') || text.includes('sensex') || text.includes('nifty')) {
@@ -287,6 +290,46 @@ export async function performNewsSync() {
     'https://news.google.com/rss/search?q=Uttarakhand&hl=en-IN&gl=IN&ceid=IN:en',
     'local', 'Uttarakhand', 'Google News (Uttarakhand)', 10
   );
+
+  // 7. Hindi News RSS Feeds (Native Hindi content)
+  // Amar Ujala Hindi
+  await syncRssFeed('https://www.amarujala.com/rss/breaking-news.xml', 'national', 'Hindi News', 'Amar Ujala', 25);
+  await syncRssFeed('https://www.amarujala.com/rss/uttar-pradesh.xml', 'national', 'Hindi News', 'Amar Ujala UP', 15);
+  await syncRssFeed('https://www.amarujala.com/rss/uttarakhand.xml', 'local', 'Hindi News', 'Amar Ujala Uttarakhand', 20);
+  await syncRssFeed('https://www.amarujala.com/rss/dehradun.xml', 'local', 'Hindi News', 'Amar Ujala Dehradun', 15);
+  
+  // Dainik Jagran Hindi
+  await syncRssFeed('https://www.jagran.com/rss/news/national.xml', 'national', 'Hindi News', 'Dainik Jagran', 20);
+  await syncRssFeed('https://www.jagran.com/rss/uttarakhand/dehradun-city.xml', 'local', 'Hindi News', 'Jagran Uttarakhand', 15);
+  
+  // Aaj Tak Hindi
+  await syncRssFeed('https://feeds.feedburner.com/AajTak/lHWr', 'national', 'Hindi News', 'Aaj Tak', 20);
+  
+  // Patrika Hindi
+  await syncRssFeed('https://api.patrika.com/rss/india-news', 'national', 'Hindi News', 'Patrika', 15);
+  await syncRssFeed('https://api.patrika.com/rss/uttarakhand-news', 'local', 'Hindi News', 'Patrika Uttarakhand', 15);
+  
+  // Navbharat Times
+  await syncRssFeed('https://navbharattimes.indiatimes.com/rssfeedsdefault.cms', 'national', 'Hindi News', 'Navbharat Times', 15);
+  
+  // Dainik Bhaskar
+  await syncRssFeed('https://www.bhaskar.com/rss-feed/1061/', 'national', 'Hindi News', 'Dainik Bhaskar', 15);
+  
+  // BBC Hindi
+  await syncRssFeed('https://feeds.bbci.co.uk/hindi/rss.xml', 'international', 'Hindi News', 'BBC Hindi', 20);
+  
+  // Google News Hindi - India
+  await syncRssFeed(
+    'https://news.google.com/rss/search?q=भारत+समाचार&hl=hi&gl=IN&ceid=IN:hi',
+    'national', 'Hindi News', 'Google News Hindi', 20
+  );
+  
+  // Google News Hindi - Uttarakhand
+  await syncRssFeed(
+    'https://news.google.com/rss/search?q=उत्तराखंड+हल्द्वानी+समाचार&hl=hi&gl=IN&ceid=IN:hi',
+    'local', 'Hindi News', 'Google News Uttarakhand Hindi', 15
+  );
+
   console.log('[NewsSync] ========== Synchronization complete ==========');
 }
 
