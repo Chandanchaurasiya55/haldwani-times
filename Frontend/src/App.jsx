@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
@@ -22,7 +22,9 @@ function App() {
       const res = await fetch(`${API_BASE_URL}/articles`);
       if (res.ok) {
         const data = await res.json();
-        setArticles(data);
+        // Filter out articles that do not have an image
+        const articlesWithImages = data.filter(art => art.image_url && art.image_url.trim() !== '');
+        setArticles(articlesWithImages);
       }
     } catch (err) {
       console.error('Failed to fetch articles:', err);

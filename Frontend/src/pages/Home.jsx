@@ -73,42 +73,6 @@ const categoryPlaceholders = {
   ]
 };
 
-function getFallbackImage(title, categoryName) {
-  const cleanTitle = (title || '').toLowerCase();
-  const cat = (categoryName || '').toLowerCase().trim();
-  let key = 'default';
-
-  if (cat.includes('uttarakhand') || cat.includes('local') || cleanTitle.includes('haldwani') || cleanTitle.includes('uttarakhand')) {
-    key = 'uttarakhand';
-  } else if (cat.includes('india') || cat.includes('national')) {
-    key = 'india';
-  } else if (cat.includes('politics')) {
-    key = 'politics';
-  } else if (cat.includes('business') || cat.includes('economy')) {
-    key = 'business';
-  } else if (cat.includes('education') || cat.includes('school') || cat.includes('exam')) {
-    key = 'education';
-  } else if (cat.includes('celebrity') || cat.includes('entertainment') || cat.includes('movie')) {
-    key = 'celebrity';
-  } else if (cat.includes('world') || cat.includes('international')) {
-    key = 'world';
-  } else if (cat.includes('food') || cat.includes('recipe')) {
-    key = 'food';
-  }
-
-  const list = categoryPlaceholders[key] || categoryPlaceholders['default'];
-  
-  // Create hash of the title to deterministically select one of the placeholder images
-  let hash = 0;
-  const str = title || '';
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const idx = Math.abs(hash) % list.length;
-  
-  return list[idx];
-}
-
 
 function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, selectedCategory, onSelectCategory, searchQuery, selectedDate, onSelectArticle, onRefreshArticles }) {
   const [activeTab, setActiveTab] = useState('all');
@@ -157,7 +121,7 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
     }
   };
 
-  // Map rawArticles to mappedArticles with categories and high-quality Unsplash fallbacks
+  // Map rawArticles to mappedArticles with categories
   const articles = useMemo(() => {
     return rawArticles.map(art => ({
       id: art.id,
@@ -168,7 +132,7 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
       author: art.source_name || art.author_name || 'Haldwani Times',
       readTime: '4 min read',
       type: art.type,
-      image: art.image_url || getFallbackImage(art.title, art.category),
+      image: art.image_url,
       hasRealImage: !!art.image_url,
       sourceName: art.source_name,
       sourceUrl: art.source_url,

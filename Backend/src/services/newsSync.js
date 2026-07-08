@@ -12,8 +12,16 @@ function cleanString(str) {
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
     .replace(/&nbsp;/g, ' ')
-    .replace(/<[^>]*>/g, '') // Strip HTML tags (after decoding entities!)
+    .replace(/&ldquo;/g, '"').replace(/&rdquo;/g, '"')
+    .replace(/&lsquo;/g, "'").replace(/&rsquo;/g, "'")
+    .replace(/&mdash;/g, '—').replace(/&ndash;/g, '–')
+    .replace(/&hellip;/g, '…').replace(/&bull;/g, '•')
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))  // numeric entities
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16))) // hex entities
+    .replace(/<[^>]*>/g, '') // Strip HTML tags
+    .replace(/\s+/g, ' ')   // Collapse multiple spaces
     .trim();
 }
 

@@ -430,17 +430,36 @@ function ArticleDetail({ article, onClose, onSelectArticle, allArticles }) {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {related.map((art) => (
+              {related.map((art) => {
+                // Decode HTML entities in title
+                const decodeHtml = (str) => {
+                  if (!str) return '';
+                  return str
+                    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(code))
+                    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+                    .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ')
+                    .replace(/&ldquo;/g, '"').replace(/&rdquo;/g, '"')
+                    .replace(/&lsquo;/g, "'").replace(/&rsquo;/g, "'")
+                    .replace(/&mdash;/g, '—').replace(/&ndash;/g, '–').replace(/&hellip;/g, '…');
+                };
+                const displayTitle = decodeHtml(art.title);
+                // Fallback image if none available
+                const displayImage = art.image || `https://images.unsplash.com/photo-1495020689067-958852a6565d?auto=format&fit=crop&w=800&q=80&sig=${art.id}`;
+                return (
                 <div 
                   key={art.id} 
                   onClick={() => onSelectArticle && onSelectArticle(art)}
                   className="bg-surface-container-lowest rounded-xl overflow-hidden editorial-shadow group cursor-pointer border border-outline-variant/10 hover:-translate-y-1 transition-all"
                 >
-                  <div className="h-48 overflow-hidden relative">
+                  <div className="h-48 overflow-hidden relative bg-slate-100">
                     <img 
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
-                      src={art.image} 
-                      alt={art.title} 
+                      src={displayImage}
+                      alt={displayTitle}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = `https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=800&q=80&sig=${art.id}`;
+                      }}
                     />
                     <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-md px-2.5 py-1 rounded text-[8px] font-bold text-on-surface uppercase select-none shadow-sm">
                       {art.category.split('/')[1] || art.category}
@@ -451,11 +470,12 @@ function ArticleDetail({ article, onClose, onSelectArticle, allArticles }) {
                       {art.type}
                     </span>
                     <h4 className="font-headline-md text-on-surface group-hover:text-primary transition-colors line-clamp-2 leading-snug font-serif text-sm md:text-base font-bold">
-                      {art.title}
+                      {displayTitle}
                     </h4>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         )}
