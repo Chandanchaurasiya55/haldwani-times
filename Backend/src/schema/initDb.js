@@ -24,6 +24,7 @@ const schemaFiles = [
   'admin.sql',
   'reporter.sql',
   'user.sql',
+  'ad.sql',
   'article.sql',
   'bookmark.sql'
 ];

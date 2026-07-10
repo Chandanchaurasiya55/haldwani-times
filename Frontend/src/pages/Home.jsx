@@ -74,14 +74,36 @@ const categoryPlaceholders = {
   ]
 };
 
-const AdPlaceholder = ({ id, size, type, description, className = "" }) => {
+const AdPlaceholder = ({ id, size, type, description, className = "", adObject }) => {
   const isSidebar = size.includes('300x250') || size.includes('300x600');
-  const isLeaderboard = size.includes('728x90');
+  const imageUrl = adObject?.image_url;
+  const targetUrl = adObject?.target_url;
+
+  if (imageUrl) {
+    return (
+      <div className={`w-full flex justify-center py-2 select-none ${className}`}>
+        <a 
+          href={targetUrl || "#"} 
+          target={targetUrl ? "_blank" : undefined} 
+          rel="noopener noreferrer"
+          className="w-full relative overflow-hidden rounded-2xl border border-slate-100 flex items-center justify-center bg-slate-50 shadow-sm transition-all hover:opacity-95"
+          style={
+            isSidebar 
+              ? { maxWidth: '300px', height: size.includes('300x600') ? '600px' : '250px' } 
+              : { maxWidth: '728px', height: '90px' }
+          }
+        >
+          <img src={imageUrl} alt="Advertisement" className="w-full h-full object-cover" />
+          <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-sm text-[8px] text-white font-black px-1.5 py-0.5 rounded tracking-wide uppercase">Ad</span>
+        </a>
+      </div>
+    );
+  }
   
   return (
     <div className={`w-full flex justify-center py-2 select-none ${className}`}>
       <div 
-        className={`w-full bg-red-50/30 border border-dashed border-red-200/80 rounded-2xl flex flex-col items-center justify-center p-3 relative shadow-sm text-center ${
+        className={`w-full bg-[#f8fafc] border border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center p-3 relative shadow-sm text-center ${
           isSidebar ? 'min-h-[250px]' : 'min-h-[90px]'
         }`}
         style={
@@ -90,11 +112,11 @@ const AdPlaceholder = ({ id, size, type, description, className = "" }) => {
             : { maxWidth: '728px', height: '90px' }
         }
       >
-        <span className="bg-red-500 text-white text-[8px] md:text-[9px] font-black px-2 py-0.5 rounded-full absolute -top-2 left-6 uppercase tracking-widest shadow-sm">
+        <span className="bg-[#b80035] text-white text-[8px] md:text-[9px] font-black px-2 py-0.5 rounded-full absolute -top-2 left-6 uppercase tracking-widest shadow-sm">
           {id}
         </span>
         <h4 className="text-slate-800 font-extrabold text-[11px] md:text-xs tracking-tight">{size}</h4>
-        <span className="text-[9px] text-red-500/80 font-bold uppercase tracking-wider">{type}</span>
+        <span className="text-[9px] text-[#b80035]/80 font-bold uppercase tracking-wider">{type}</span>
         <span className="text-[8px] text-slate-400 font-medium max-w-[90%] leading-normal">{description}</span>
       </div>
     </div>
@@ -107,6 +129,10 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
   const [bookmarkedIds, setBookmarkedIds] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
+  
+  // Dynamic Ads State from DB
+  const [dbAds, setDbAds] = useState([]);
+  const getAdBySlot = (slotId) => dbAds.find(ad => ad.slot_id === slotId);
   
   // Lazy loading pagination count
   const [visibleCount, setVisibleCount] = useState(12);
@@ -205,8 +231,9 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
     }
   }, [selectedCategory, activeTab]);
 
-  // Load bookmarks on mount & check session
+  // Load bookmarks, ads on mount & check session
   useEffect(() => {
+    fetchDbAds();
     const savedUser = localStorage.getItem('ht_user');
     if (savedUser) {
       const user = JSON.parse(savedUser);
@@ -216,6 +243,18 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
       }
     }
   }, []);
+
+  const fetchDbAds = async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/articles/ads`);
+      if (res.ok) {
+        const data = await res.json();
+        setDbAds(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch ads:', err);
+    }
+  };
 
   const fetchBookmarks = async (userId) => {
     try {
@@ -546,6 +585,7 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
           size="728x90 - Leaderboard Ad" 
           type="TOP BANNER AD (Leaderboard)" 
           description="Best for brand visibility" 
+          adObject={getAdBySlot('AD 1')}
         />
       </div>
 
@@ -724,7 +764,7 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
                 })()}
 
                 {/* AD 2: Below Featured */}
-                <AdPlaceholder id="AD 2" size="728x90 - Horizontal Ad" type="BELOW HEADER AD" description="Good for mid-page visibility" />
+                <AdPlaceholder id="AD 2" size="728x90 - Horizontal Ad" type="BELOW HEADER AD" description="Good for mid-page visibility" adObject={getAdBySlot('AD 2')} />
 
                 {/* Two-Column Section: Main story + AD 3 */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
@@ -772,12 +812,12 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
 
                   {/* Right: AD 3 */}
                   <div className="flex justify-center items-center h-full">
-                    <AdPlaceholder id="AD 3" size="300x250 - Medium Rectangle" type="SIDEBAR AD" description="High visibility on desktop" />
+                    <AdPlaceholder id="AD 3" size="300x250 - Medium Rectangle" type="SIDEBAR AD" description="High visibility on desktop" adObject={getAdBySlot('AD 3')} />
                   </div>
                 </div>
 
                 {/* AD 4 */}
-                <AdPlaceholder id="AD 4" size="728x90 - Horizontal Banner" type="BETWEEN SECTIONS AD" description="Good CTR, Between content sections" />
+                <AdPlaceholder id="AD 4" size="728x90 - Horizontal Banner" type="BETWEEN SECTIONS AD" description="Good CTR, Between content sections" adObject={getAdBySlot('AD 4')} />
 
                 {/* Section with Grid & AD 5 Sidebar */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">

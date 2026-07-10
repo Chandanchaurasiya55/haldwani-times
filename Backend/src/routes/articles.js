@@ -3,6 +3,30 @@ import db from '../config/db.js';
 
 const router = express.Router();
 
+// Ensure ads table exists and has default entries
+db.query(
+  `CREATE TABLE IF NOT EXISTS ads (
+    slot_id VARCHAR(50) PRIMARY KEY,
+    image_url TEXT,
+    target_url TEXT,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  ) ENGINE=InnoDB`,
+  [],
+  (err) => {
+    if (err) {
+      console.error('[AdsInit] Failed to verify/create ads table:', err.message);
+    } else {
+      const slots = ['AD 1', 'AD 2', 'AD 3', 'AD 4', 'AD 5', 'AD 6', 'AD 7'];
+      slots.forEach(slot => {
+        db.query(
+          `INSERT IGNORE INTO ads (slot_id, image_url, target_url) VALUES (?, '', '')`,
+          [slot]
+        );
+      });
+    }
+  }
+);
+
 // ==========================================
 // PUBLIC ENDPOINTS
 // ==========================================
@@ -255,6 +279,42 @@ router.get('/bookmarks/:userId', (req, res) => {
         return res.status(500).json({ message: 'Failed to fetch bookmarks.', error: err.message });
       }
       res.json(rows);
+    }
+  );
+});
+
+// ==========================================
+// ADS MANAGEMENT ENDPOINTS
+// ==========================================
+
+// @route   GET /api/articles/ads
+// @desc    Get all current ads
+router.get('/ads', (req, res) => {
+  db.query('SELECT * FROM ads', [], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ message: 'Failed to fetch ads.', error: err.message });
+    }
+    res.json(rows);
+  });
+});
+
+// @route   PUT /api/articles/ads
+// @desc    Update a specific ad slot (admin-only)
+router.put('/ads', (req, res) => {
+  const { slot_id, image_url, target_url } = req.body;
+
+  if (!slot_id) {
+    return res.status(400).json({ message: 'Slot ID is required.' });
+  }
+
+  db.query(
+    'UPDATE ads SET image_url = ?, target_url = ? WHERE slot_id = ?',
+    [image_url || '', target_url || '', slot_id],
+    (err, result) => {
+      if (err) {
+        return res.status(500).json({ message: 'Failed to update ad.', error: err.message });
+      }
+      res.json({ message: `Ad slot ${slot_id} updated successfully.` });
     }
   );
 });
