@@ -28,6 +28,15 @@ const server = app.listen(PORT, () => {
     }
   });
 
+  db.query("SHOW COLUMNS FROM articles LIKE 'priority'", (err, rows) => {
+    if (!err && rows.length === 0) {
+      db.query("ALTER TABLE articles ADD COLUMN priority INT DEFAULT 0", (err2) => {
+        if (err2) console.error("Migration error adding priority column:", err2.message);
+        else console.log("Database migrated: added priority column.");
+      });
+    }
+  });
+
   // Start real-time background news synchronizer
   startNewsSync();
 });

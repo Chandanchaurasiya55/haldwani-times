@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS articles (
   status VARCHAR(50) NOT NULL DEFAULT 'pending',
   source_name VARCHAR(255) DEFAULT NULL,
   source_url TEXT DEFAULT NULL,
+  priority INT DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (author_id) REFERENCES reporters(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;

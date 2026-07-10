@@ -136,6 +136,7 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
   
   // Lazy loading pagination count
   const [visibleCount, setVisibleCount] = useState(12);
+  const [visibleRemainingCount, setVisibleRemainingCount] = useState(6);
 
   // Load Hindi translation cache from sessionStorage
   const [hindiCache, setHindiCache] = useState(() => {
@@ -575,6 +576,21 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
     return art;
   };
 
+  // Extract all currently displayed article IDs on the homepage default grid
+  const displayedIds = useMemo(() => {
+    return new Set([
+      heroArticle?.id,
+      mainNewsArticle?.id,
+      ...generalNewsGrid.map(a => a.id),
+      ...exclusiveNewsGrid.map(a => a.id),
+      ...entertainmentArticles.map(a => a.id)
+    ].filter(Boolean));
+  }, [heroArticle, mainNewsArticle, generalNewsGrid, exclusiveNewsGrid, entertainmentArticles]);
+
+  const remainingFeedArticles = useMemo(() => {
+    return articles.filter(art => !displayedIds.has(art.id));
+  }, [articles, displayedIds]);
+
   return (
     <div className="w-full pt-[148px] pb-10 flex flex-col gap-6 md:gap-10">
 
@@ -913,12 +929,12 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
 
                   {/* Right: AD 5 */}
                   <div className="lg:col-span-1 flex justify-center items-start lg:sticky lg:top-24 h-full">
-                    <AdPlaceholder id="AD 5" size="300x600 - Half Page Ad" type="HALF PAGE AD" description="Best for brand campaigns" />
+                    <AdPlaceholder id="AD 5" size="300x600 - Half Page Ad" type="HALF PAGE AD" description="Best for brand campaigns" adObject={getAdBySlot('AD 5')} />
                   </div>
                 </div>
 
                 {/* AD 6: Before Footer Ad */}
-                <AdPlaceholder id="AD 6" size="728x90 - Horizontal Banner" type="BEFORE FOOTER AD" description="Capture attention before footer" />
+                <AdPlaceholder id="AD 6" size="728x90 - Horizontal Banner" type="BEFORE FOOTER AD" description="Capture attention before footer" adObject={getAdBySlot('AD 6')} />
 
                 {/* Entertainment World Section */}
                 {entertainmentArticles.length > 0 && (
@@ -968,13 +984,72 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
                 )}
 
                 {/* AD 7: Last Content Ad */}
-                <AdPlaceholder id="AD 7" size="728x90 - Horizontal Banner" type="LAST CONTENT AD" description="Increase page RPM" />
+                <AdPlaceholder id="AD 7" size="728x90 - Horizontal Banner" type="LAST CONTENT AD" description="Increase page RPM" adObject={getAdBySlot('AD 7')} />
+
+                {/* NEW: More Stories / Latest Feed Section for Default Homepage */}
+                {remainingFeedArticles.length > 0 && (
+                  <div className="border-t border-black/10 pt-8 mt-4 flex flex-col gap-6">
+                    <h2 className="font-serif font-black text-xl text-on-surface flex items-center gap-2">
+                      <span className="w-1.5 h-6 bg-[#ba1a1a] rounded"></span>
+                      और अधिक नवीनतम समाचार (More Latest News)
+                    </h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {remainingFeedArticles.slice(0, visibleRemainingCount).map((article) => {
+                        const display = getDisplayArticle(article);
+                        return (
+                          <article 
+                            key={article.id}
+                            onClick={() => onSelectArticle && onSelectArticle(article)}
+                            className="bg-white rounded-2xl md:rounded-[18px] card-shadow border border-outline-variant/10 overflow-hidden group h-full flex flex-col transition-all hover:-translate-y-1 relative cursor-pointer"
+                          >
+                            {(!currentUser || currentUser.role === 'user') && (
+                              <button
+                                onClick={(e) => handleToggleBookmark(e, article.id)}
+                                className="absolute top-3 right-3 bg-white/90 hover:bg-white backdrop-blur-sm p-1.5 rounded-full shadow-md text-on-surface hover:text-primary transition-all flex items-center justify-center z-10"
+                              >
+                                <span className="material-symbols-outlined text-lg font-bold">
+                                  {bookmarkedIds.includes(article.id) ? 'bookmark' : 'bookmark_border'}
+                                </span>
+                              </button>
+                            )}
+                            <div className="h-44 relative overflow-hidden shrink-0">
+                              <img className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src={display.image} alt={display.title} loading="lazy" />
+                              <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-md font-label-caps text-[9px] font-bold text-on-surface uppercase select-none">{display.category}</div>
+                            </div>
+                            <div className="p-4 flex flex-col flex-1 justify-between gap-3">
+                              <div className="flex flex-col gap-2">
+                                <h3 className="font-serif text-sm md:text-base font-bold leading-snug group-hover:text-primary transition-colors text-[#191c1e] line-clamp-2">{display.title}</h3>
+                                <p className="font-body-md text-xs md:text-sm text-on-surface-variant line-clamp-2 leading-relaxed">{display.summary}</p>
+                              </div>
+                              <div className="border-t border-outline-variant/10 pt-3 mt-1 text-[10px] md:text-xs text-on-surface-variant flex items-center justify-between">
+                                <span className="font-bold truncate mr-2">{display.sourceName || display.author}</span>
+                                <span className="flex items-center gap-0.5 shrink-0"><span className="material-symbols-outlined text-xs">schedule</span> {display.readTime}</span>
+                              </div>
+                            </div>
+                          </article>
+                        );
+                      })}
+                    </div>
+
+                    {remainingFeedArticles.length > visibleRemainingCount && (
+                      <div className="flex justify-center mt-4 select-none">
+                        <button 
+                          onClick={() => setVisibleRemainingCount(prev => prev + 6)}
+                          className="px-8 py-3 bg-white hover:bg-slate-50 text-primary border border-primary/20 rounded-full font-bold text-xs uppercase shadow-sm hover:shadow-md transition-all flex items-center gap-2 cursor-pointer animate-pulse hover:animate-none"
+                        >
+                          <span className="material-symbols-outlined text-sm font-black">expand_more</span>
+                          <span>और समाचार लोड करें (Show More)</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
               // Non-default category/tab page rendering (simple grid)
               <div className="flex flex-col gap-6 md:gap-8">
                 {/* Banner Ad below header */}
-                <AdPlaceholder id="AD 2" size="728x90 - Horizontal Ad" type="BELOW HEADER AD" description="Good for mid-page visibility" />
+                <AdPlaceholder id="AD 2" size="728x90 - Horizontal Ad" type="BELOW HEADER AD" description="Good for mid-page visibility" adObject={getAdBySlot('AD 2')} />
 
                 {/* Grid Navigation */}
                 <section id="news-feed" className="border-b border-black/10 pb-1 mt-2 md:mt-4">

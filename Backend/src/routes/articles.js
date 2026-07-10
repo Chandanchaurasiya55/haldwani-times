@@ -39,7 +39,7 @@ router.get('/', (req, res) => {
      FROM articles a 
      JOIN reporters r ON a.author_id = r.id 
      WHERE a.status = 'published' 
-     ORDER BY a.created_at DESC`,
+     ORDER BY a.priority DESC, a.created_at DESC`,
     [],
     (err, rows) => {
       if (err) {
@@ -57,16 +57,16 @@ router.get('/', (req, res) => {
 // @route   POST /api/articles
 // @desc    Submit a new article for review
 router.post('/', (req, res) => {
-  const { title, content, category, type, image_url, author_id } = req.body;
+  const { title, content, category, type, image_url, author_id, priority } = req.body;
 
   if (!title || !content || !category || !type || !author_id) {
     return res.status(400).json({ message: 'Required fields missing.' });
   }
 
   db.query(
-    `INSERT INTO articles (title, content, category, type, image_url, author_id, status)
-     VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
-    [title, content, category, type, image_url || null, author_id],
+    `INSERT INTO articles (title, content, category, type, image_url, author_id, status, priority)
+     VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)`,
+    [title, content, category, type, image_url || null, author_id, priority || 0],
     (err, result) => {
       if (err) {
         return res.status(500).json({ message: 'Failed to submit article.', error: err.message });
@@ -80,6 +80,7 @@ router.post('/', (req, res) => {
         image_url,
         author_id,
         status: 'pending',
+        priority: priority || 0,
         message: 'Article submitted successfully! Awaiting administrator review.'
       });
     }
@@ -106,16 +107,16 @@ router.get('/my-submissions/:authorId', (req, res) => {
 // @route   POST /api/articles/blog
 // @desc    Publish a new blog post directly (admin desk)
 router.post('/blog', (req, res) => {
-  const { title, content, image_url } = req.body;
+  const { title, content, image_url, priority } = req.body;
 
   if (!title || !content) {
     return res.status(400).json({ message: 'Title and content are required.' });
   }
 
   db.query(
-    `INSERT INTO articles (title, content, category, type, image_url, author_id, status)
-     VALUES (?, ?, 'Blog', 'blog', ?, 1, 'published')`,
-    [title, content, image_url || null],
+    `INSERT INTO articles (title, content, category, type, image_url, author_id, status, priority)
+     VALUES (?, ?, 'Blog', 'blog', ?, 1, 'published', ?)`,
+    [title, content, image_url || null, priority || 0],
     (err, result) => {
       if (err) {
         return res.status(500).json({ message: 'Failed to publish blog.', error: err.message });

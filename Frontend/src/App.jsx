@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Home from './pages/Home';
-import Dashboard from './pages/Dashboard';
+import AdminDashboard from './pages/AdminDashboard';
+import ReporterDashboard from './pages/ReporterDashboard';
+import UserDashboard from './pages/UserDashboard';
 import ArticleDetail from './pages/ArticleDetail';
 import Footer from './components/Footer';
 
@@ -9,12 +11,22 @@ const API_BASE_URL = 'http://localhost:5000/api';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home'); // 'home' or 'dashboard'
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [articles, setArticles] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Sync URL changes dynamically
+  useEffect(() => {
+    const handleLocationChange = () => {
+      setCurrentPath(window.location.pathname);
+    };
+    window.addEventListener('popstate', handleLocationChange);
+    return () => window.removeEventListener('popstate', handleLocationChange);
+  }, []);
 
   const fetchArticles = async () => {
     try {
@@ -38,6 +50,10 @@ function App() {
   }, []);
 
   const handleNavigate = (page) => {
+    if (page === 'dashboard') {
+      window.location.href = '/dashboard';
+      return;
+    }
     setCurrentPage(page);
     setSelectedArticle(null);
     if (page === 'home') {
@@ -52,6 +68,19 @@ function App() {
     setSelectedArticle(null);
     setSelectedCategory(category);
   };
+
+  // Render standalone dashboard pages based on URL routes
+  if (currentPath === '/maalik-access') {
+    return <AdminDashboard onRefreshArticles={fetchArticles} />;
+  }
+
+  if (currentPath === '/reporter/login') {
+    return <ReporterDashboard onRefreshArticles={fetchArticles} />;
+  }
+
+  if (currentPath === '/dashboard') {
+    return <UserDashboard onRefreshArticles={fetchArticles} />;
+  }
 
   return (
     <>
@@ -71,7 +100,7 @@ function App() {
           onSelectArticle={setSelectedArticle}
           allArticles={articles}
         />
-      ) : currentPage === 'home' ? (
+      ) : (
         <Home 
           articles={articles}
           isLoading={isLoading}
@@ -80,11 +109,6 @@ function App() {
           searchQuery={searchQuery}
           selectedDate={selectedDate}
           onSelectArticle={setSelectedArticle}
-          onRefreshArticles={fetchArticles}
-        />
-      ) : (
-        <Dashboard 
-          onClose={() => handleNavigate('home')} 
           onRefreshArticles={fetchArticles}
         />
       )}

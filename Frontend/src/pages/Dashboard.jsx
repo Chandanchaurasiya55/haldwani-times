@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'http://localhost:5000';
 
 function Dashboard({ onClose, onRefreshArticles }) {
   // Authentication & session state
@@ -67,7 +67,7 @@ function Dashboard({ onClose, onRefreshArticles }) {
 
   const fetchMyArticles = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/articles/my-submissions/${currentUser.id}`);
+      const res = await fetch(`${API_BASE_URL}/api/articles/my-submissions/${currentUser.id}`);
       if (res.ok) {
         const data = await res.json();
         setMyArticles(data);
@@ -79,7 +79,7 @@ function Dashboard({ onClose, onRefreshArticles }) {
 
   const fetchPendingArticles = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/articles/pending`);
+      const res = await fetch(`${API_BASE_URL}/api/articles/pending`);
       if (res.ok) {
         const data = await res.json();
         setPendingArticles(data);
@@ -91,7 +91,7 @@ function Dashboard({ onClose, onRefreshArticles }) {
 
   const fetchReporters = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/articles/admin/reporters`);
+      const res = await fetch(`${API_BASE_URL}/api/articles/admin/reporters`);
       if (res.ok) {
         const data = await res.json();
         setReportersList(data);
@@ -103,7 +103,7 @@ function Dashboard({ onClose, onRefreshArticles }) {
 
   const fetchAds = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/articles/ads`);
+      const res = await fetch(`${API_BASE_URL}/api/articles/ads`);
       if (res.ok) {
         const data = await res.json();
         setAdsList(data);
@@ -119,7 +119,7 @@ function Dashboard({ onClose, onRefreshArticles }) {
     setSuccessMsg('');
 
     try {
-      const res = await fetch(`${API_BASE_URL}/articles/ads`, {
+      const res = await fetch(`${API_BASE_URL}/api/articles/ads`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -157,7 +157,7 @@ function Dashboard({ onClose, onRefreshArticles }) {
 
   const fetchMyBookmarks = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/articles/bookmarks/${currentUser.id}`);
+      const res = await fetch(`${API_BASE_URL}/api/articles/bookmarks/${currentUser.id}`);
       if (res.ok) {
         const data = await res.json();
         setMyBookmarks(data);
@@ -173,7 +173,7 @@ function Dashboard({ onClose, onRefreshArticles }) {
     setSuccessMsg('');
 
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/login`, {
+      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -186,9 +186,15 @@ function Dashboard({ onClose, onRefreshArticles }) {
 
       localStorage.setItem('ht_user', JSON.stringify(data.user));
       setCurrentUser(data.user);
-      setSuccessMsg('Logged in successfully!');
+      
       setEmail('');
       setPassword('');
+
+      // If logged in as general reader or reporter, close dashboard modal to view homepage.
+      // If admin, stay on dashboard.
+      if (data.user.role !== 'admin' && onClose) {
+        onClose();
+      }
     } catch (err) {
       setErrorMsg(err.message);
     }
@@ -202,7 +208,7 @@ function Dashboard({ onClose, onRefreshArticles }) {
     const endpoint = registerRole === 'reporter' ? 'register/reporter' : 'register/user';
 
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/${endpoint}`, {
+      const res = await fetch(`${API_BASE_URL}/api/auth/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email, password })
@@ -213,10 +219,18 @@ function Dashboard({ onClose, onRefreshArticles }) {
         throw new Error(data.message || 'Registration failed.');
       }
 
-      setSuccessMsg(`Account registered successfully! You can now log in.`);
-      setAuthMode('login');
+      // Log in automatically
+      localStorage.setItem('ht_user', JSON.stringify(data.user));
+      setCurrentUser(data.user);
+      
       setUsername('');
+      setEmail('');
       setPassword('');
+
+      // Navigate back to home page
+      if (onClose) {
+        onClose();
+      }
     } catch (err) {
       setErrorMsg(err.message);
     }
@@ -239,7 +253,7 @@ function Dashboard({ onClose, onRefreshArticles }) {
     setSuccessMsg('');
 
     try {
-      const res = await fetch(`${API_BASE_URL}/articles`, {
+      const res = await fetch(`${API_BASE_URL}/api/articles`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -273,7 +287,7 @@ function Dashboard({ onClose, onRefreshArticles }) {
     setSuccessMsg('');
 
     try {
-      const res = await fetch(`${API_BASE_URL}/articles/blog`, {
+      const res = await fetch(`${API_BASE_URL}/api/articles/blog`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -302,7 +316,7 @@ function Dashboard({ onClose, onRefreshArticles }) {
 
   const handleUpdateArticleStatus = async (id, status) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/articles/${id}/status`, {
+      const res = await fetch(`${API_BASE_URL}/api/articles/${id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
@@ -318,7 +332,7 @@ function Dashboard({ onClose, onRefreshArticles }) {
   const handleToggleReporterStatus = async (id, currentStatus) => {
     const nextStatus = currentStatus === 'active' ? 'blocked' : 'active';
     try {
-      const res = await fetch(`${API_BASE_URL}/articles/admin/reporters/${id}/status`, {
+      const res = await fetch(`${API_BASE_URL}/api/articles/admin/reporters/${id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: nextStatus })
@@ -333,7 +347,7 @@ function Dashboard({ onClose, onRefreshArticles }) {
 
   const handleRemoveBookmark = async (articleId) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/articles/unbookmark`, {
+      const res = await fetch(`${API_BASE_URL}/api/articles/unbookmark`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -458,7 +472,7 @@ function Dashboard({ onClose, onRefreshArticles }) {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      placeholder="e.g. admin@haldwanitimes.com"
+                      placeholder="e.g. admin@gmail.com"
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm transition-all bg-slate-50/50"
                     />
                   </div>
@@ -1243,29 +1257,50 @@ function Dashboard({ onClose, onRefreshArticles }) {
 
                       {/* Stat Cards */}
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 select-none">
-                        <div className="bg-white border border-slate-150 p-5 rounded-2xl flex items-center gap-4 shadow-sm hover:shadow transition-all duration-300">
-                          <span className="material-symbols-outlined text-3xl text-primary bg-primary-container p-3 rounded-xl font-bold">edit_document</span>
-                          <div>
-                            <h4 className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Drafts Filed</h4>
-                            <span className="text-xl font-black text-slate-800">{myArticles.length} Stories</span>
+                        
+                        {/* Drafts Filed */}
+                        <div className="bg-white border border-slate-100 p-6 rounded-2xl shadow-[0px_4px_20px_-2px_rgba(0,0,0,0.05)] flex flex-col gap-2 transition-all hover:-translate-y-1 hover:shadow-md duration-300">
+                          <div className="flex justify-between items-start">
+                            <span className="text-slate-400 font-sans text-[11px] font-bold uppercase tracking-wider">Drafts Filed</span>
+                            <span className="text-[#920028] bg-[#ffdada]/60 p-2 rounded-xl material-symbols-outlined font-bold text-xl">edit_document</span>
+                          </div>
+                          <div className="mt-2">
+                            <h2 className="text-3xl font-black text-slate-800 tracking-tight">{myArticles.length} <span className="text-sm font-normal text-slate-400">Stories</span></h2>
+                            <p className="text-[11px] font-bold text-[#0051d5] mt-1 flex items-center gap-1">
+                              <span className="material-symbols-outlined text-sm">history</span> Total filings submitted
+                            </p>
                           </div>
                         </div>
 
-                        <div className="bg-white border border-slate-150 p-5 rounded-2xl flex items-center gap-4 shadow-sm hover:shadow transition-all duration-300">
-                          <span className="material-symbols-outlined text-3xl text-emerald-600 bg-emerald-50 p-3 rounded-xl font-bold">verified</span>
-                          <div>
-                            <h4 className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Approved & Live</h4>
-                            <span className="text-xl font-black text-slate-800">{myArticles.filter(a => a.status === 'published').length} Articles</span>
+                        {/* Approved & Live */}
+                        <div className="bg-white border border-slate-100 p-6 rounded-2xl shadow-[0px_4px_20px_-2px_rgba(0,0,0,0.05)] flex flex-col gap-2 transition-all hover:-translate-y-1 hover:shadow-md duration-300">
+                          <div className="flex justify-between items-start">
+                            <span className="text-slate-400 font-sans text-[11px] font-bold uppercase tracking-wider">Approved & Live</span>
+                            <span className="text-[#0051d5] bg-blue-50 p-2 rounded-xl material-symbols-outlined font-bold text-xl">verified</span>
+                          </div>
+                          <div className="mt-2">
+                            <h2 className="text-3xl font-black text-slate-800 tracking-tight">{myArticles.filter(a => a.status === 'published').length} <span className="text-sm font-normal text-slate-400">Articles</span></h2>
+                            <p className="text-[11px] font-bold text-emerald-600 mt-1 flex items-center gap-1">
+                              <span className="material-symbols-outlined text-sm font-black">check_circle</span> Live on public feed
+                            </p>
                           </div>
                         </div>
 
-                        <div className="bg-white border border-slate-150 p-5 rounded-2xl flex items-center gap-4 shadow-sm hover:shadow transition-all duration-300">
-                          <span className="material-symbols-outlined text-3xl text-rose-500 bg-rose-50 p-3 rounded-xl font-bold">pending_actions</span>
-                          <div>
-                            <h4 className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Pending Status</h4>
-                            <span className="text-xl font-black text-slate-800">{myArticles.filter(a => a.status === 'pending').length} Drafts</span>
+                        {/* In Review */}
+                        <div className="bg-white border border-slate-100 p-6 rounded-2xl shadow-[0px_4px_20px_-2px_rgba(0,0,0,0.05)] flex flex-col gap-2 transition-all hover:-translate-y-1 hover:shadow-md duration-300">
+                          <div className="flex justify-between items-start">
+                            <span className="text-slate-400 font-sans text-[11px] font-bold uppercase tracking-wider">Awaiting Review</span>
+                            <span className="text-amber-700 bg-amber-50 p-2 rounded-xl material-symbols-outlined font-bold text-xl">pending_actions</span>
+                          </div>
+                          <div className="mt-2">
+                            <h2 className="text-3xl font-black text-slate-800 tracking-tight">{myArticles.filter(a => a.status === 'pending').length} <span className="text-sm font-normal text-slate-400">Drafts</span></h2>
+                            <p className={`text-[11px] font-bold mt-1 flex items-center gap-1 ${myArticles.filter(a => a.status === 'pending').length > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
+                              <span className="material-symbols-outlined text-sm font-bold">schedule</span>
+                              {myArticles.filter(a => a.status === 'pending').length > 0 ? 'Awaiting Editor decision' : 'No drafts pending'}
+                            </p>
                           </div>
                         </div>
+
                       </div>
 
                       {/* Lower Grid Row */}
