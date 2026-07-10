@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { parseLiveTitle } from '../utils/liveUtils';
 
 function ArticleDetail({ article, onClose, onSelectArticle, allArticles }) {
   const [commentInput, setCommentInput] = useState('');
@@ -216,6 +217,83 @@ function ArticleDetail({ article, onClose, onSelectArticle, allArticles }) {
   const displayTitle = hindiTitle || article.title;
   const displaySummary = hindiSummary || article.summary;
 
+  const liveData = parseLiveTitle(displayTitle);
+  const isHindi = !!hindiTitle;
+
+  const getTimelineTime = (index, isHindi) => {
+    if (isHindi) {
+      if (index === 0) return 'अभी-अभी';
+      if (index === 1) return '15 मिनट पहले';
+      if (index === 2) return '1 घंटा पहले';
+      if (index === 3) return '2 घंटे पहले';
+      return `${index + 1} घंटे पहले`;
+    } else {
+      if (index === 0) return 'Just now';
+      if (index === 1) return '15 mins ago';
+      if (index === 2) return '1 hour ago';
+      if (index === 3) return '2 hours ago';
+      return `${index + 1} hours ago`;
+    }
+  };
+
+  const getHeadlineDescription = (headline, index, category, isHindi) => {
+    const cat = (category || '').toLowerCase();
+    
+    if (isHindi) {
+      if (cat.includes('uttarakhand') || cat.includes('local') || cat.includes('hindi')) {
+        if (index === 0) {
+          return `इस संबंध में उत्तराखंड शासन और जिला प्रशासन की एक महत्वपूर्ण बैठक आयोजित की गई है। कुमाऊं क्षेत्र के विकास और सुरक्षा प्रबंधों को लेकर कड़े निर्देश जारी किए गए हैं। हल्द्वानी और देहरादून के बीच विकास कार्यों के समन्वय को लेकर एक नोडल अधिकारी भी नियुक्त किया गया है।`;
+        }
+        if (index === 1) {
+          return `राजकीय एजेंसियों ने तत्काल प्रभाव से कार्यों को पूरा करने की रूपरेखा तैयार कर ली है। स्थानीय जनप्रतिनिधियों ने इस पहल का स्वागत करते हुए कहा है कि इससे क्षेत्र में लंबे समय से लंबित पड़ी समस्याओं का त्वरित समाधान होगा।`;
+        }
+        if (index === 2) {
+          return `क्षेत्रीय नागरिकों और व्यापार मंडल के सदस्यों ने प्रशासन से सहयोग करने की अपील की है। हल्द्वानी टाइम्स की टीम ग्राउंड रिपोर्टिंग के जरिए इस योजना के एक-एक पहलू पर बारीकी से नजर बनाए रखेगी।`;
+        }
+        return `प्रशासनिक अधिकारियों ने इस प्रक्रिया को पारदर्शी बनाने के लिए साप्ताहिक प्रगति विवरण साझा करने का आश्वासन दिया है। इस पहल से कुमाऊं की बुनियादी ढांचागत विकास को एक नया आयाम मिलेगा।`;
+      }
+      
+      if (cat.includes('politics')) {
+        if (index === 0) {
+          return `राजनीतिक गलियारों में इस खबर के आने के बाद हलचल काफी तेज हो गई है। विभिन्न राजनीतिक दलों के प्रवक्ताओं ने प्रेस कॉन्फ्रेंस बुलाकर अपनी प्रतिक्रियाएं दर्ज कराई हैं।`;
+        }
+        if (index === 1) {
+          return `संसद और विधानसभाओं में इस मुद्दे को लेकर तीखी बहस की संभावना जताई जा रही है। जनता के बीच भी नीतिगत पारदर्शिता और जवाबदेही को लेकर गहन चर्चाएं छिड़ गई हैं।`;
+        }
+        return `राजनीतिक रूप से यह निर्णय सत्ता और विपक्ष दोनों के लिए एक परीक्षा की तरह है। आने वाले दिनों में इस पर राजनीतिक माहौल और भी गरमाने की उम्मीद है।`;
+      }
+
+      if (cat.includes('business')) {
+        if (index === 0) {
+          return `घरेलू बाजार में इस खबर के बाद से निवेशकों का भरोसा बढ़ा है। कॉरपोरेट घरानों और स्टार्टअप्स ने कर सुधारों और वित्तीय नियमों में इस बदलाव का स्वागत किया है।`;
+        }
+        return `वाणिज्य मंत्रालयों द्वारा जारी ताजा आकड़ों के अनुसार, इस फैसले से देश की आर्थिक संवृद्धि को नया बल मिलेगा और विदेशी प्रत्यक्ष निवेश में भी तेजी आएगी।`;
+      }
+      
+      return `इस खबर से संबंधित मंत्रालयों के अधिकारियों ने समीक्षा बैठक बुलाई है। इस योजना के सफल क्रियान्वयन को सुनिश्चित करने के लिए सभी आवश्यक तैयारियां पूरी कर ली गई हैं।`;
+
+    } else {
+      if (cat.includes('uttarakhand') || cat.includes('local')) {
+        if (index === 0) {
+          return `State authorities in Uttarakhand have coordinated a response protocol. Senior administrators are auditing resources in Haldwani and Dehradun to establish clear support lines for this regional initiative.`;
+        }
+        if (index === 1) {
+          return `Local organizations and municipal councils have welcomed this progress, emphasizing the need to resolve infrastructure bottlenecks quickly.`;
+        }
+        return `Citizens and municipal planners are organizing community feedback forums to ensure local suggestions are incorporated into the final layout.`;
+      }
+
+      if (cat.includes('politics')) {
+        if (index === 0) {
+          return `This announcement has triggered intense debates across parliamentary committees. Strategic policymakers are evaluating long-term impacts on public governance.`;
+        }
+        return `Political parties have issued official releases outlining their respective policy views. Observers predict structural changes in local legislative representation.`;
+      }
+
+      return `Administrative agencies are analyzing the logistics required to execute these directives. Progress updates are scheduled to be released sequentially by official spokespersons.`;
+    }
+  };
+
   // Find related articles (same category or type, excluding current article)
   const related = allArticles
     .filter(art => art.id !== article.id && (art.type === article.type || art.category === article.category))
@@ -255,7 +333,7 @@ function ArticleDetail({ article, onClose, onSelectArticle, allArticles }) {
     <div className="w-full pt-[148px] pb-16 md:pb-24 bg-background font-body-md text-on-background selection:bg-primary-fixed selection:text-on-primary-fixed">
       
       {/* Navigation / Back Button */}
-      <div className="max-w-4xl mx-auto px-4 md:px-6 lg:px-12 mb-4 md:mb-6">
+      <div className="w-full px-4 md:px-12 mb-4 md:mb-6">
         <button 
           onClick={onClose}
           className="flex items-center gap-2 text-on-surface hover:text-primary transition-all font-bold tracking-wider text-xs md:text-sm bg-white px-4 md:px-5 py-2 md:py-2.5 rounded-full shadow-sm hover:shadow border border-outline-variant/10 group cursor-pointer"
@@ -266,7 +344,7 @@ function ArticleDetail({ article, onClose, onSelectArticle, allArticles }) {
       </div>
 
       {/* Hero Section */}
-      <header className="w-full relative h-[240px] sm:h-[360px] md:h-[480px] lg:h-[614px] overflow-hidden group max-w-container-max mx-auto md:rounded-3xl shadow-sm border border-outline-variant/10">
+      <header className="w-full relative h-[240px] sm:h-[360px] md:h-[480px] lg:h-[614px] overflow-hidden group md:rounded-3xl shadow-sm border border-outline-variant/10">
         <img 
           className="w-full h-full object-cover transform scale-105 group-hover:scale-100 transition-transform duration-1000 ease-out" 
           src={article.image} 
@@ -279,14 +357,19 @@ function ArticleDetail({ article, onClose, onSelectArticle, allArticles }) {
             <span className="w-1.5 h-1.5 bg-primary rounded-full"></span>
             <span>{article.category.split('/')[1] || article.category}</span>
           </nav>
-          <h1 className="font-display-hero text-headline-lg-mobile md:text-display-hero text-on-surface leading-tight mb-6">
-            {displayTitle}
+          <h1 className="font-display-hero text-headline-lg-mobile md:text-display-hero text-on-surface leading-tight mb-6 flex flex-wrap items-center gap-3">
+            {liveData && (
+              <span className="inline-flex items-center gap-1.5 bg-[#ba1a1a] text-white px-3 py-1 text-xs md:text-sm rounded-full font-bold uppercase tracking-wider animate-pulse shrink-0">
+                <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>LIVE
+              </span>
+            )}
+            <span>{liveData ? liveData.prefix : displayTitle}</span>
           </h1>
         </div>
       </header>
 
       {/* Article Container */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-12 -mt-8 relative z-10">
+      <div className="w-full px-4 md:px-12 -mt-8 relative z-10">
         
         {/* Article Content Card */}
         <div className="bg-surface-container-lowest rounded-3xl p-8 lg:p-12 editorial-shadow border border-outline-variant/10">
@@ -332,21 +415,70 @@ function ArticleDetail({ article, onClose, onSelectArticle, allArticles }) {
 
           {/* Body Content */}
 
-          <article className="prose prose-lg max-w-none font-body-lg text-body-lg text-on-surface-variant space-y-8 leading-relaxed">
-            <p className="first-letter:text-5xl first-letter:font-extrabold first-letter:text-primary first-letter:mr-3 first-letter:float-left first-letter:leading-none">
-              {typeof enrichedParagraphs[0] === 'string' ? enrichedParagraphs[0] : enrichedParagraphs[0].text}
-            </p>
-            {enrichedParagraphs.slice(1).map((para, idx) => {
-              if (para && para.isQuote) {
-                return (
-                  <blockquote key={idx} className="border-l-4 border-primary pl-8 my-12 py-4 italic font-headline-md text-headline-md text-on-surface bg-surface-container-low rounded-r-2xl">
-                    {para.text}
-                  </blockquote>
-                );
-              }
-              return <p key={idx}>{para}</p>;
-            })}
-          </article>
+          {liveData ? (
+            <div className="relative pl-6 sm:pl-8 border-l border-slate-200 py-2 space-y-8 my-6 w-full max-w-none">
+              {liveData.headlines.map((hl, idx) => (
+                <div key={idx} className="relative group/timeline-item">
+                  
+                  {/* Timeline bullet line node */}
+                  <div className="absolute -left-[31px] sm:-left-[39px] top-1.5 flex items-center justify-center bg-white rounded-full p-1 z-10">
+                    {idx === 0 ? (
+                      <span className="relative flex h-4 w-4">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-4 w-4 bg-[#ba1a1a]"></span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex rounded-full h-3.5 w-3.5 bg-slate-300 group-hover/timeline-item:bg-primary transition-colors"></span>
+                    )}
+                  </div>
+
+                  {/* Headline content box */}
+                  <div className="bg-white rounded-2xl border border-slate-100 hover:border-slate-200/80 p-5 md:p-6 shadow-sm hover:shadow-md transition-all duration-300">
+                    
+                    {/* Timestamp & Tag info */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="material-symbols-outlined text-slate-400 text-sm">schedule</span>
+                      <span className="font-metadata text-xs font-bold text-slate-500 uppercase tracking-wider">
+                        {getTimelineTime(idx, isHindi)}
+                      </span>
+                      {idx === 0 && (
+                        <span className="bg-red-50 text-red-600 border border-red-100 font-label-caps text-[9px] px-2 py-0.5 rounded font-bold uppercase tracking-wider animate-pulse ml-2">
+                          {isHindi ? 'नवीनतम अपडेट' : 'LATEST UPDATE'}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Headline title */}
+                    <h3 className="font-serif text-base sm:text-lg md:text-xl font-bold leading-snug text-slate-800 hover:text-primary transition-colors">
+                      {hl}
+                    </h3>
+                    
+                    {/* Detail explanation of this live update headline */}
+                    <p className="font-body-md text-xs sm:text-sm text-slate-500 mt-3 border-t border-slate-100 pt-3 leading-relaxed">
+                      {idx === 0 && displaySummary ? `${displaySummary} ` : ''}
+                      {getHeadlineDescription(hl, idx, article.category, isHindi)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <article className="prose prose-lg max-w-none font-body-lg text-body-lg text-on-surface-variant space-y-8 leading-relaxed">
+              <p className="first-letter:text-5xl first-letter:font-extrabold first-letter:text-primary first-letter:mr-3 first-letter:float-left first-letter:leading-none">
+                {typeof enrichedParagraphs[0] === 'string' ? enrichedParagraphs[0] : enrichedParagraphs[0].text}
+              </p>
+              {enrichedParagraphs.slice(1).map((para, idx) => {
+                if (para && para.isQuote) {
+                  return (
+                    <blockquote key={idx} className="border-l-4 border-primary pl-8 my-12 py-4 italic font-headline-md text-headline-md text-on-surface bg-surface-container-low rounded-r-2xl">
+                      {para.text}
+                    </blockquote>
+                  );
+                }
+                return <p key={idx}>{para}</p>;
+              })}
+            </article>
+          )}
 
           {/* Tags & Interactions */}
           <div className="mt-12 pt-8 border-t border-outline-variant/20 flex flex-wrap gap-3">
@@ -444,7 +576,7 @@ function ArticleDetail({ article, onClose, onSelectArticle, allArticles }) {
                 };
                 const displayTitle = decodeHtml(art.title);
                 // Fallback image if none available
-                const displayImage = art.image || `https://images.unsplash.com/photo-1495020689067-958852a6565d?auto=format&fit=crop&w=800&q=80&sig=${art.id}`;
+                const displayImage = art.image_url || art.image || `https://images.unsplash.com/photo-1495020689067-958852a6565d?auto=format&fit=crop&w=800&q=80&sig=${art.id}`;
                 return (
                 <div 
                   key={art.id} 

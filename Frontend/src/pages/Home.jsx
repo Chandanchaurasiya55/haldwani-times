@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { parseLiveTitle } from '../utils/liveUtils';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
@@ -493,8 +494,8 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
 
       {/* Key Administrative Profiles Bar */}
       <section className="w-full max-w-[1440px] mx-auto px-4 md:px-12 select-none">
-        {/* Mobile: horizontal scroll */}
-        <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1 md:hidden">
+        {/* Mobile: wrap into lines (3 on first line, 2 on second line centered) */}
+        <div className="flex flex-wrap justify-center gap-2.5 md:hidden">
           {[
             { src: '/modi.jpg', name: 'Narendra Modi', role: 'PM of India' },
             { src: '/governor.jpg', name: 'Lt. Gen. Gurmit Singh', role: 'Governor' },
@@ -502,7 +503,7 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
             { src: '/dm.jpg', name: 'Lalit M. Rayal', role: 'DM Nainital' },
             { src: '/mayor.jpg', name: 'Gajraj S. Bisht', role: 'Mayor Haldwani' },
           ].map((p) => (
-            <div key={p.name} className="shrink-0 flex flex-col items-center text-center bg-white border border-slate-100 p-3 rounded-2xl shadow-sm w-[110px]">
+            <div key={p.name} className="flex flex-col items-center text-center bg-white border border-slate-100 p-3 rounded-2xl shadow-sm w-[calc(33.33%-7px)] min-w-[90px] shrink-0">
               <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-primary/10">
                 <img className="w-full h-full object-cover" src={p.src} alt={p.name} />
               </div>
@@ -571,6 +572,7 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
           <>
             {heroArticle && (() => {
               const display = getDisplayArticle(heroArticle);
+              const liveData = parseLiveTitle(display.title);
               return (
               <section 
                 onClick={() => onSelectArticle && onSelectArticle(heroArticle)}
@@ -585,20 +587,50 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
                       alt={display.title}
                       loading="lazy"
                     />
-                    <div className="absolute top-3 left-3 bg-primary text-on-primary px-2.5 py-1 rounded-full flex items-center gap-1.5 font-label-caps text-[9px] md:text-xs shadow-lg select-none">
+                    <div className="absolute top-3 left-3 bg-[#ba1a1a] text-white px-2.5 py-1 rounded-full flex items-center gap-1.5 font-label-caps text-[9px] md:text-xs shadow-lg select-none">
                       <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
-                      ताज़ा खबर
+                      {liveData ? 'लाइव अपडेट' : 'ताज़ा खबर'}
                     </div>
                   </div>
 
                   <div className="p-5 sm:p-8 lg:p-12 flex flex-col justify-center bg-white">
-                    <span className="font-label-caps text-xs text-primary mb-3 tracking-widest block font-bold uppercase">{display.category}</span>
-                    <h1 className={`font-serif text-xl sm:text-2xl md:text-3xl lg:text-4xl mb-4 md:mb-6 font-bold leading-tight text-[#191c1e] ${isHindiMode ? 'leading-relaxed' : ''}`}>
-                      {display.title}
-                    </h1>
-                    <p className="font-body-md text-sm text-on-surface-variant mb-5 md:mb-8 leading-relaxed line-clamp-3 md:line-clamp-none">
-                      {display.summary}
-                    </p>
+                    <span className="font-label-caps text-xs text-primary mb-3 tracking-widest block font-bold uppercase flex items-center gap-2">
+                      {display.category}
+                      {liveData && (
+                        <span className="inline-flex items-center gap-1 bg-[#ba1a1a] text-white px-2 py-0.5 text-[9px] rounded font-bold uppercase tracking-wider animate-pulse shrink-0">
+                          <span className="w-1 h-1 bg-white rounded-full"></span>LIVE
+                        </span>
+                      )}
+                    </span>
+                    {liveData ? (
+                      <>
+                        <h1 className={`font-serif text-xl sm:text-2xl md:text-3xl lg:text-4xl mb-4 md:mb-6 font-bold leading-tight text-[#191c1e] ${isHindiMode ? 'leading-relaxed' : ''}`}>
+                          {liveData.prefix}
+                        </h1>
+                        <div className="flex flex-col gap-3 mb-6 bg-slate-50 p-4 rounded-2xl border border-slate-100/80">
+                          {liveData.headlines.map((hl, idx) => (
+                            <div key={idx} className="flex gap-3 items-start group/hl hover:bg-white p-2.5 rounded-xl border border-transparent hover:border-slate-100 hover:shadow-sm transition-all duration-300">
+                              <div className="flex items-center justify-center mt-1.5 shrink-0 relative">
+                                <span className="absolute w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
+                                <span className="relative w-2.5 h-2.5 rounded-full bg-red-600"></span>
+                              </div>
+                              <p className="font-serif text-sm sm:text-base text-slate-800 font-bold group-hover/hl:text-primary transition-colors leading-snug">
+                                {hl}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <h1 className={`font-serif text-xl sm:text-2xl md:text-3xl lg:text-4xl mb-4 md:mb-6 font-bold leading-tight text-[#191c1e] ${isHindiMode ? 'leading-relaxed' : ''}`}>
+                          {display.title}
+                        </h1>
+                        <p className="font-body-md text-sm text-on-surface-variant mb-5 md:mb-8 leading-relaxed line-clamp-3 md:line-clamp-none">
+                          {display.summary}
+                        </p>
+                      </>
+                    )}
                     
                     <div className="flex items-center justify-between mt-auto pt-4 md:pt-6 border-t border-outline-variant/20">
                       <div className="flex items-center gap-2 md:gap-3 min-w-0">
@@ -697,6 +729,7 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
                 <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
                   {finalDisplayArticles.slice(0, visibleCount).map((article) => {
                     const display = getDisplayArticle(article);
+                    const liveData = parseLiveTitle(display.title);
                     return (
                     <article 
                       key={article.id}
@@ -721,17 +754,46 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
                           alt={display.title}
                           loading="lazy"
                         />
-                        <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-md font-label-caps text-[9px] font-bold text-on-surface uppercase select-none">
+                        <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-md font-label-caps text-[9px] font-bold text-on-surface uppercase select-none flex items-center gap-1.5">
                           {display.category}
+                          {liveData && (
+                            <span className="w-1.5 h-1.5 bg-[#ba1a1a] rounded-full animate-pulse"></span>
+                          )}
                         </div>
                       </div>
                       <div className="p-4 md:p-6 flex flex-col gap-2 md:gap-3">
-                        <h3 className="font-serif text-base md:text-lg lg:text-xl font-bold leading-snug group-hover:text-primary transition-colors text-[#191c1e]">
-                          {display.title}
-                        </h3>
-                        <p className="font-body-md text-xs md:text-sm text-on-surface-variant line-clamp-2 md:line-clamp-3 leading-relaxed">
-                          {display.summary}
-                        </p>
+                        {liveData ? (
+                          <>
+                            <h3 className="font-serif text-base md:text-lg lg:text-xl font-bold leading-snug group-hover:text-primary transition-colors text-[#191c1e] flex items-center gap-2">
+                              <span className="inline-flex items-center gap-1 bg-[#ba1a1a] text-white px-1.5 py-0.5 text-[9px] rounded font-bold uppercase tracking-wider animate-pulse shrink-0">LIVE</span>
+                              {liveData.prefix}
+                            </h3>
+                            <div className="flex flex-col gap-2 mt-1 bg-slate-50 p-3 rounded-xl border border-slate-100/60">
+                              {liveData.headlines.slice(0, 3).map((hl, idx) => (
+                                <div key={idx} className="flex gap-2 items-start border-b border-dashed border-slate-200/50 last:border-0 pb-2 mb-2 last:pb-0 last:mb-0">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-red-600 mt-2 shrink-0 animate-pulse"></span>
+                                  <p className="font-serif text-xs md:text-sm text-slate-700 font-bold group-hover:text-slate-900 leading-snug line-clamp-2">
+                                    {hl}
+                                  </p>
+                                </div>
+                              ))}
+                              {liveData.headlines.length > 3 && (
+                                <span className="text-[10px] text-primary font-bold self-start mt-0.5">
+                                  + {liveData.headlines.length - 3} updates...
+                                </span>
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <h3 className="font-serif text-base md:text-lg lg:text-xl font-bold leading-snug group-hover:text-primary transition-colors text-[#191c1e]">
+                              {display.title}
+                            </h3>
+                            <p className="font-body-md text-xs md:text-sm text-on-surface-variant line-clamp-2 md:line-clamp-3 leading-relaxed">
+                              {display.summary}
+                            </p>
+                          </>
+                        )}
                         
                         <div className="flex flex-col gap-1 md:gap-2 border-t border-outline-variant/10 pt-3 md:pt-4 mt-1 md:mt-2">
                           <div className="flex items-center justify-between">
