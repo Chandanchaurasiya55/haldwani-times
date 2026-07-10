@@ -1,7 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { parseLiveTitle } from '../utils/liveUtils';
 
-function ArticleDetail({ article, onClose, onSelectArticle, allArticles }) {
+function ArticleDetail({ article: rawArticle, onClose, onSelectArticle, allArticles }) {
+  const article = React.useMemo(() => {
+    if (!rawArticle) return null;
+    const isRaw = !rawArticle.summary && rawArticle.content;
+    if (isRaw || !rawArticle.image) {
+      return {
+        id: rawArticle.id,
+        category: rawArticle.type && rawArticle.category ? `${rawArticle.type.toUpperCase()} / ${rawArticle.category.toUpperCase()}` : (rawArticle.category || ''),
+        rawCategory: (rawArticle.category || '').toLowerCase(),
+        title: rawArticle.title,
+        summary: rawArticle.content || rawArticle.summary,
+        author: rawArticle.source_name || rawArticle.author_name || rawArticle.author || 'Haldwani Times',
+        readTime: '4 min read',
+        type: rawArticle.type,
+        image: rawArticle.image_url || rawArticle.image,
+        hasRealImage: !!(rawArticle.image_url || rawArticle.image),
+        sourceName: rawArticle.source_name || rawArticle.sourceName,
+        sourceUrl: rawArticle.source_url || rawArticle.sourceUrl,
+        createdAt: rawArticle.created_at || rawArticle.createdAt
+      };
+    }
+    return rawArticle;
+  }, [rawArticle]);
+
   const [commentInput, setCommentInput] = useState('');
   const [hindiTitle, setHindiTitle] = useState('');
   const [hindiSummary, setHindiSummary] = useState('');
@@ -296,7 +319,14 @@ function ArticleDetail({ article, onClose, onSelectArticle, allArticles }) {
 
   // Find related articles (same category or type, excluding current article)
   const related = allArticles
-    .filter(art => art.id !== article.id && (art.type === article.type || art.category === article.category))
+    .filter(art => {
+      if (art.id === article.id) return false;
+      const artCat = (art.category || '').toLowerCase();
+      const currentCat = (article.rawCategory || article.category || '').toLowerCase();
+      const matchesType = art.type && article.type && art.type === article.type;
+      const matchesCat = artCat && (artCat === currentCat || currentCat.includes(artCat) || artCat.includes(currentCat));
+      return matchesType || matchesCat;
+    })
     .slice(0, 3);
 
   const handlePostComment = (e) => {

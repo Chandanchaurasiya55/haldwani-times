@@ -74,6 +74,33 @@ const categoryPlaceholders = {
   ]
 };
 
+const AdPlaceholder = ({ id, size, type, description, className = "" }) => {
+  const isSidebar = size.includes('300x250') || size.includes('300x600');
+  const isLeaderboard = size.includes('728x90');
+  
+  return (
+    <div className={`w-full flex justify-center py-2 select-none ${className}`}>
+      <div 
+        className={`w-full bg-red-50/30 border border-dashed border-red-200/80 rounded-2xl flex flex-col items-center justify-center p-3 relative shadow-sm text-center ${
+          isSidebar ? 'min-h-[250px]' : 'min-h-[90px]'
+        }`}
+        style={
+          isSidebar 
+            ? { maxWidth: '300px', height: size.includes('300x600') ? '600px' : '250px' } 
+            : { maxWidth: '728px', height: '90px' }
+        }
+      >
+        <span className="bg-red-500 text-white text-[8px] md:text-[9px] font-black px-2 py-0.5 rounded-full absolute -top-2 left-6 uppercase tracking-widest shadow-sm">
+          {id}
+        </span>
+        <h4 className="text-slate-800 font-extrabold text-[11px] md:text-xs tracking-tight">{size}</h4>
+        <span className="text-[9px] text-red-500/80 font-bold uppercase tracking-wider">{type}</span>
+        <span className="text-[8px] text-slate-400 font-medium max-w-[90%] leading-normal">{description}</span>
+      </div>
+    </div>
+  );
+};
+
 
 function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, selectedCategory, onSelectCategory, searchQuery, selectedDate, onSelectArticle, onRefreshArticles }) {
   const [activeTab, setActiveTab] = useState('all');
@@ -394,6 +421,49 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
     return finalDisplayArticles.find(a => a.hasRealImage) || finalDisplayArticles[0] || null;
   })();
 
+  const { mainNewsArticle, generalNewsGrid, exclusiveNewsGrid, entertainmentArticles } = useMemo(() => {
+    if (!isDefaultState) {
+      return { mainNewsArticle: null, generalNewsGrid: [], exclusiveNewsGrid: [], entertainmentArticles: [] };
+    }
+    const remaining = finalDisplayArticles.filter(a => a.id !== heroArticle?.id);
+    const mainNews = remaining[0] || null;
+    const general = remaining.slice(1, 4);
+    const exclusive = remaining.slice(4, 7);
+
+    // If exclusive is short, we can backfill from other articles to make it look complete
+    if (exclusive.length < 3 && remaining.length > 7) {
+      exclusive.push(...remaining.slice(7, 7 + (3 - exclusive.length)));
+    }
+
+    // For Entertainment (celebrity)
+    let entList = articles.filter(art => 
+      art.rawCategory === 'celebrity' && 
+      art.id !== heroArticle?.id && 
+      art.id !== mainNews?.id && 
+      !general.some(g => g.id === art.id) && 
+      !exclusive.some(e => e.id === art.id)
+    ).slice(0, 4);
+
+    // Fallback if not enough celebrity articles to make a full 4-column row
+    if (entList.length < 4) {
+      const fallbackPool = articles.filter(art => 
+        art.id !== heroArticle?.id && 
+        art.id !== mainNews?.id && 
+        !general.some(g => g.id === art.id) && 
+        !exclusive.some(e => e.id === art.id) &&
+        !entList.some(el => el.id === art.id)
+      );
+      entList = [...entList, ...fallbackPool.slice(0, 4 - entList.length)];
+    }
+
+    return {
+      mainNewsArticle: mainNews,
+      generalNewsGrid: general,
+      exclusiveNewsGrid: exclusive,
+      entertainmentArticles: entList
+    };
+  }, [isDefaultState, finalDisplayArticles, heroArticle, articles]);
+
   // Auto-translate all articles to Hindi
   const isHindiMode = selectedCategory === 'Hindi News';
   // Track which article IDs have already been translated, initialized from cached keys
@@ -468,6 +538,16 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
 
   return (
     <div className="w-full pt-[148px] pb-10 flex flex-col gap-6 md:gap-10">
+
+      {/* AD 1: 728x90 Leaderboard Ad */}
+      <div className="w-full max-w-[1440px] mx-auto px-4 md:px-12">
+        <AdPlaceholder 
+          id="AD 1" 
+          size="728x90 - Leaderboard Ad" 
+          type="TOP BANNER AD (Leaderboard)" 
+          description="Best for brand visibility" 
+        />
+      </div>
 
       {/* Stock / Finance Ticker Widget */}
       <section className="w-full bg-white border-y border-outline-variant/20 overflow-hidden flex items-center select-none py-3">
@@ -570,266 +650,394 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
           </div>
         ) : (
           <>
-            {heroArticle && (() => {
-              const display = getDisplayArticle(heroArticle);
-              const liveData = parseLiveTitle(display.title);
-              return (
-              <section 
-                onClick={() => onSelectArticle && onSelectArticle(heroArticle)}
-                className="group relative overflow-hidden rounded-2xl md:rounded-[18px] bg-white card-shadow border border-outline-variant/10 transition-all duration-500 hover:-translate-y-1 cursor-pointer"
-              >
-                <div className="grid grid-cols-1 lg:grid-cols-2">
-                  
-                  <div className="h-[220px] sm:h-[300px] md:h-[380px] lg:h-[480px] relative overflow-hidden">
-                    <img 
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-                      src={display.image}
-                      alt={display.title}
-                      loading="lazy"
-                    />
-                    <div className="absolute top-3 left-3 bg-[#ba1a1a] text-white px-2.5 py-1 rounded-full flex items-center gap-1.5 font-label-caps text-[9px] md:text-xs shadow-lg select-none">
-                      <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
-                      {liveData ? 'लाइव अपडेट' : 'ताज़ा खबर'}
-                    </div>
-                  </div>
-
-                  <div className="p-5 sm:p-8 lg:p-12 flex flex-col justify-center bg-white">
-                    <span className="font-label-caps text-xs text-primary mb-3 tracking-widest block font-bold uppercase flex items-center gap-2">
-                      {display.category}
-                      {liveData && (
-                        <span className="inline-flex items-center gap-1 bg-[#ba1a1a] text-white px-2 py-0.5 text-[9px] rounded font-bold uppercase tracking-wider animate-pulse shrink-0">
-                          <span className="w-1 h-1 bg-white rounded-full"></span>LIVE
-                        </span>
-                      )}
-                    </span>
-                    {liveData ? (
-                      <>
-                        <h1 className={`font-serif text-xl sm:text-2xl md:text-3xl lg:text-4xl mb-4 md:mb-6 font-bold leading-tight text-[#191c1e] ${isHindiMode ? 'leading-relaxed' : ''}`}>
-                          {liveData.prefix}
-                        </h1>
-                        <div className="flex flex-col gap-3 mb-6 bg-slate-50 p-4 rounded-2xl border border-slate-100/80">
-                          {liveData.headlines.map((hl, idx) => (
-                            <div key={idx} className="flex gap-3 items-start group/hl hover:bg-white p-2.5 rounded-xl border border-transparent hover:border-slate-100 hover:shadow-sm transition-all duration-300">
-                              <div className="flex items-center justify-center mt-1.5 shrink-0 relative">
-                                <span className="absolute w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
-                                <span className="relative w-2.5 h-2.5 rounded-full bg-red-600"></span>
+            {isDefaultState ? (
+              <div className="flex flex-col gap-6 md:gap-10">
+                {/* Featured Section */}
+                {heroArticle && (() => {
+                  const display = getDisplayArticle(heroArticle);
+                  const liveData = parseLiveTitle(display.title);
+                  return (
+                    <section 
+                      onClick={() => onSelectArticle && onSelectArticle(heroArticle)}
+                      className="group relative overflow-hidden rounded-2xl md:rounded-[18px] bg-white card-shadow border border-outline-variant/10 transition-all duration-500 hover:-translate-y-1 cursor-pointer"
+                    >
+                      <div className="grid grid-cols-1 lg:grid-cols-2">
+                        <div className="h-[220px] sm:h-[300px] md:h-[380px] lg:h-[480px] relative overflow-hidden">
+                          <img className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" src={display.image} alt={display.title} loading="lazy" />
+                          <div className="absolute top-3 left-3 bg-[#ba1a1a] text-white px-2.5 py-1 rounded-full flex items-center gap-1.5 font-label-caps text-[9px] md:text-xs shadow-lg select-none">
+                            <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
+                            {liveData ? 'लाइव अपडेट' : 'ताज़ा खबर'}
+                          </div>
+                        </div>
+                        <div className="p-5 sm:p-8 lg:p-12 flex flex-col justify-center bg-white">
+                          <span className="font-label-caps text-xs text-primary mb-3 tracking-widest block font-bold uppercase flex items-center gap-2">
+                            {display.category}
+                          </span>
+                          {liveData ? (
+                            <>
+                              <h1 className={`font-serif text-xl sm:text-2xl md:text-3xl lg:text-4xl mb-4 md:mb-6 font-bold leading-tight text-[#191c1e] ${isHindiMode ? 'leading-relaxed' : ''}`}>
+                                {liveData.prefix}
+                              </h1>
+                              <div className="flex flex-col gap-3 mb-6 bg-slate-50 p-4 rounded-2xl border border-slate-100/80">
+                                {liveData.headlines.map((hl, idx) => (
+                                  <div key={idx} className="flex gap-3 items-start group/hl hover:bg-white p-2.5 rounded-xl border border-transparent hover:border-slate-100 hover:shadow-sm transition-all duration-300">
+                                    <div className="flex items-center justify-center mt-1.5 shrink-0 relative">
+                                      <span className="absolute w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
+                                      <span className="relative w-2.5 h-2.5 rounded-full bg-red-600"></span>
+                                    </div>
+                                    <p className="font-serif text-sm sm:text-base text-slate-800 font-bold group-hover/hl:text-primary transition-colors leading-snug">{hl}</p>
+                                  </div>
+                                ))}
                               </div>
-                              <p className="font-serif text-sm sm:text-base text-slate-800 font-bold group-hover/hl:text-primary transition-colors leading-snug">
-                                {hl}
-                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <h1 className={`font-serif text-xl sm:text-2xl md:text-3xl lg:text-4xl mb-4 md:mb-6 font-bold leading-tight text-[#191c1e] ${isHindiMode ? 'leading-relaxed' : ''}`}>
+                                {display.title}
+                              </h1>
+                              <p className="font-body-md text-sm text-on-surface-variant mb-5 md:mb-8 leading-relaxed line-clamp-3 md:line-clamp-none">{display.summary}</p>
+                            </>
+                          )}
+                          <div className="flex items-center justify-between mt-auto pt-4 md:pt-6 border-t border-outline-variant/20">
+                            <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                              <div className="w-8 h-8 md:w-10 md:h-10 shrink-0 rounded-full bg-slate-100 flex items-center justify-center font-bold text-primary border border-outline-variant/30 uppercase select-none text-xs">
+                                {(display.sourceName || display.author || 'HT').slice(0, 2)}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-metadata text-xs font-bold truncate">{display.sourceName || display.author}</p>
+                                <p className="text-[10px] text-on-surface-variant font-medium hidden sm:block">हल्द्वानी टाइम्स</p>
+                              </div>
                             </div>
-                          ))}
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <h1 className={`font-serif text-xl sm:text-2xl md:text-3xl lg:text-4xl mb-4 md:mb-6 font-bold leading-tight text-[#191c1e] ${isHindiMode ? 'leading-relaxed' : ''}`}>
-                          {display.title}
-                        </h1>
-                        <p className="font-body-md text-sm text-on-surface-variant mb-5 md:mb-8 leading-relaxed line-clamp-3 md:line-clamp-none">
-                          {display.summary}
-                        </p>
-                      </>
-                    )}
-                    
-                    <div className="flex items-center justify-between mt-auto pt-4 md:pt-6 border-t border-outline-variant/20">
-                      <div className="flex items-center gap-2 md:gap-3 min-w-0">
-                        <div className="w-8 h-8 md:w-10 md:h-10 shrink-0 rounded-full bg-slate-100 flex items-center justify-center font-bold text-primary border border-outline-variant/30 uppercase select-none text-xs">
-                          {(display.sourceName || display.author || 'HT').slice(0, 2)}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-metadata text-xs font-bold truncate">{display.sourceName || display.author}</p>
-                          <p className="text-[10px] text-on-surface-variant font-medium hidden sm:block">
-                            {display.sourceName ? 'हल्द्वानी टाइम्स द्वारा संकलित' : 'हल्द्वानी टाइम्स'}
-                          </p>
+                            <div className="flex items-center gap-1 shrink-0">
+                              {(!currentUser || currentUser.role === 'user') && (
+                                <button onClick={(e) => handleToggleBookmark(e, heroArticle.id)} className="p-2 rounded-full hover:bg-surface-container-low transition-colors text-on-surface-variant hover:text-primary">
+                                  <span className="material-symbols-outlined text-lg md:text-xl">{bookmarkedIds.includes(heroArticle.id) ? 'bookmark' : 'bookmark_border'}</span>
+                                </button>
+                              )}
+                              <button onClick={(e) => { e.stopPropagation(); e.preventDefault(); }} className="p-2 rounded-full hover:bg-surface-container-low transition-colors text-on-surface-variant hover:text-primary"><span className="material-symbols-outlined text-lg md:text-xl">share</span></button>
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      
-                      <div className="flex items-center gap-1 shrink-0">
+                    </section>
+                  );
+                })()}
+
+                {/* AD 2: Below Featured */}
+                <AdPlaceholder id="AD 2" size="728x90 - Horizontal Ad" type="BELOW HEADER AD" description="Good for mid-page visibility" />
+
+                {/* Two-Column Section: Main story + AD 3 */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+                  {/* Left: Main horizontal story */}
+                  {mainNewsArticle ? (() => {
+                    const display = getDisplayArticle(mainNewsArticle);
+                    const liveData = parseLiveTitle(display.title);
+                    return (
+                      <div 
+                        onClick={() => onSelectArticle && onSelectArticle(mainNewsArticle)}
+                        className="lg:col-span-2 bg-white rounded-2xl md:rounded-[18px] card-shadow border border-outline-variant/10 overflow-hidden group flex flex-col md:flex-row cursor-pointer transition-all hover:-translate-y-1 relative h-full min-h-[300px]"
+                      >
                         {(!currentUser || currentUser.role === 'user') && (
-                          <button 
-                            onClick={(e) => handleToggleBookmark(e, heroArticle.id)}
-                            className="p-2 rounded-full hover:bg-surface-container-low transition-colors text-on-surface-variant hover:text-primary"
+                          <button
+                            onClick={(e) => handleToggleBookmark(e, mainNewsArticle.id)}
+                            className="absolute top-3 right-3 bg-white/90 hover:bg-white backdrop-blur-sm p-1.5 rounded-full shadow-md text-on-surface hover:text-primary transition-all flex items-center justify-center z-10"
                           >
-                            <span className="material-symbols-outlined text-lg md:text-xl">
-                              {bookmarkedIds.includes(heroArticle.id) ? 'bookmark' : 'bookmark_border'}
+                            <span className="material-symbols-outlined text-lg font-bold">
+                              {bookmarkedIds.includes(mainNewsArticle.id) ? 'bookmark' : 'bookmark_border'}
                             </span>
                           </button>
                         )}
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                          className="p-2 rounded-full hover:bg-surface-container-low transition-colors text-on-surface-variant hover:text-primary"
-                        >
-                          <span className="material-symbols-outlined text-lg md:text-xl">share</span>
-                        </button>
+                        <div className="md:w-1/2 h-[200px] md:h-auto relative overflow-hidden shrink-0">
+                          <img className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src={display.image} alt={display.title} loading="lazy" />
+                          <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-md font-label-caps text-[9px] font-bold text-on-surface uppercase select-none">
+                            {display.category}
+                          </div>
+                        </div>
+                        <div className="md:w-1/2 p-5 sm:p-6 flex flex-col justify-between gap-3 flex-1">
+                          <div className="flex flex-col gap-2 md:gap-3">
+                            <span className="bg-primary/10 text-primary text-[9px] font-bold px-2 py-0.5 rounded w-max uppercase tracking-wider">मुख्य समाचार</span>
+                            <h3 className="font-serif text-base md:text-lg lg:text-xl font-bold leading-snug group-hover:text-primary transition-colors text-[#191c1e] line-clamp-3">{display.title}</h3>
+                            <p className="font-body-md text-xs md:text-sm text-on-surface-variant line-clamp-3 leading-relaxed">{display.summary}</p>
+                          </div>
+                          <div className="border-t border-outline-variant/10 pt-3 mt-1 text-[10px] md:text-xs text-on-surface-variant flex items-center justify-between">
+                            <span className="font-bold truncate mr-2">{display.sourceName || display.author}</span>
+                            <span className="flex items-center gap-0.5 shrink-0"><span className="material-symbols-outlined text-xs">schedule</span> {display.readTime}</span>
+                          </div>
+                        </div>
                       </div>
+                    );
+                  })() : (
+                    <div className="lg:col-span-2 bg-[#f8fafc] border border-slate-200/60 rounded-2xl p-8 flex items-center justify-center text-slate-400">मुख्य समाचार उपलब्ध नहीं है</div>
+                  )}
+
+                  {/* Right: AD 3 */}
+                  <div className="flex justify-center items-center h-full">
+                    <AdPlaceholder id="AD 3" size="300x250 - Medium Rectangle" type="SIDEBAR AD" description="High visibility on desktop" />
+                  </div>
+                </div>
+
+                {/* AD 4 */}
+                <AdPlaceholder id="AD 4" size="728x90 - Horizontal Banner" type="BETWEEN SECTIONS AD" description="Good CTR, Between content sections" />
+
+                {/* Section with Grid & AD 5 Sidebar */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+                  {/* Left (2 columns): General news + Exclusive news */}
+                  <div className="lg:col-span-2 flex flex-col gap-6 md:gap-8">
+                    
+                    {/* General News Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                      {generalNewsGrid.map((article) => {
+                        const display = getDisplayArticle(article);
+                        return (
+                          <article 
+                            key={article.id}
+                            onClick={() => onSelectArticle && onSelectArticle(article)}
+                            className="bg-white rounded-2xl md:rounded-[18px] card-shadow border border-outline-variant/10 overflow-hidden group h-full flex flex-col transition-all hover:-translate-y-1 relative cursor-pointer"
+                          >
+                            {(!currentUser || currentUser.role === 'user') && (
+                              <button
+                                onClick={(e) => handleToggleBookmark(e, article.id)}
+                                className="absolute top-3 right-3 bg-white/90 hover:bg-white backdrop-blur-sm p-1.5 rounded-full shadow-md text-on-surface hover:text-primary transition-all flex items-center justify-center z-10"
+                              >
+                                <span className="material-symbols-outlined text-lg font-bold">
+                                  {bookmarkedIds.includes(article.id) ? 'bookmark' : 'bookmark_border'}
+                                </span>
+                              </button>
+                            )}
+                            <div className="h-40 relative overflow-hidden shrink-0">
+                              <img className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src={display.image} alt={display.title} />
+                              <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-md font-label-caps text-[9px] font-bold text-on-surface uppercase select-none">{display.category}</div>
+                            </div>
+                            <div className="p-4 flex flex-col flex-1 justify-between gap-3">
+                              <div className="flex flex-col gap-2">
+                                <h3 className="font-serif text-sm md:text-base font-bold leading-snug group-hover:text-primary transition-colors text-[#191c1e] line-clamp-2">{display.title}</h3>
+                                <p className="font-body-md text-[11px] md:text-xs text-on-surface-variant line-clamp-2 leading-relaxed">{display.summary}</p>
+                              </div>
+                              <div className="border-t border-outline-variant/10 pt-3 mt-1 text-[10px] md:text-xs text-on-surface-variant flex items-center justify-between">
+                                <span className="font-bold truncate mr-2">{display.sourceName || display.author}</span>
+                                <span className="flex items-center gap-0.5 shrink-0"><span className="material-symbols-outlined text-xs">schedule</span> {display.readTime}</span>
+                              </div>
+                            </div>
+                          </article>
+                        );
+                      })}
+                    </div>
+
+                    {/* Exclusive News Section */}
+                    {exclusiveNewsGrid.length > 0 && (
+                      <div className="border-t border-black/10 pt-6">
+                        <h2 className="font-serif font-black text-xl text-on-surface mb-4 flex items-center gap-2">
+                          <span className="w-1.5 h-6 bg-[#ba1a1a] rounded"></span>
+                          एक्सक्लूसिव न्यूज़
+                        </h2>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                          {exclusiveNewsGrid.map((article) => {
+                            const display = getDisplayArticle(article);
+                            return (
+                              <article 
+                                key={article.id}
+                                onClick={() => onSelectArticle && onSelectArticle(article)}
+                                className="bg-white rounded-2xl md:rounded-[18px] card-shadow border border-outline-variant/10 overflow-hidden group h-full flex flex-col transition-all hover:-translate-y-1 relative cursor-pointer"
+                              >
+                                {(!currentUser || currentUser.role === 'user') && (
+                                  <button
+                                    onClick={(e) => handleToggleBookmark(e, article.id)}
+                                    className="absolute top-3 right-3 bg-white/90 hover:bg-white backdrop-blur-sm p-1.5 rounded-full shadow-md text-on-surface hover:text-primary transition-all flex items-center justify-center z-10"
+                                  >
+                                    <span className="material-symbols-outlined text-lg font-bold">
+                                      {bookmarkedIds.includes(article.id) ? 'bookmark' : 'bookmark_border'}
+                                    </span>
+                                  </button>
+                                )}
+                                <div className="h-40 relative overflow-hidden shrink-0">
+                                  <img className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src={display.image} alt={display.title} />
+                                  <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-md font-label-caps text-[9px] font-bold text-on-surface uppercase select-none">{display.category}</div>
+                                </div>
+                                <div className="p-4 flex flex-col flex-1 justify-between gap-3">
+                                  <div className="flex flex-col gap-2">
+                                    <h3 className="font-serif text-sm md:text-base font-bold leading-snug group-hover:text-primary transition-colors text-[#191c1e] line-clamp-2">{display.title}</h3>
+                                    <p className="font-body-md text-[11px] md:text-xs text-on-surface-variant line-clamp-2 leading-relaxed">{display.summary}</p>
+                                  </div>
+                                  <div className="border-t border-outline-variant/10 pt-3 mt-1 text-[10px] md:text-xs text-on-surface-variant flex items-center justify-between">
+                                    <span className="font-bold truncate mr-2">{display.sourceName || display.author}</span>
+                                    <span className="flex items-center gap-0.5 shrink-0"><span className="material-symbols-outlined text-xs">schedule</span> {display.readTime}</span>
+                                  </div>
+                                </div>
+                              </article>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right: AD 5 */}
+                  <div className="lg:col-span-1 flex justify-center items-start lg:sticky lg:top-24 h-full">
+                    <AdPlaceholder id="AD 5" size="300x600 - Half Page Ad" type="HALF PAGE AD" description="Best for brand campaigns" />
+                  </div>
+                </div>
+
+                {/* AD 6: Before Footer Ad */}
+                <AdPlaceholder id="AD 6" size="728x90 - Horizontal Banner" type="BEFORE FOOTER AD" description="Capture attention before footer" />
+
+                {/* Entertainment World Section */}
+                {entertainmentArticles.length > 0 && (
+                  <div className="border-t border-black/10 pt-6">
+                    <h2 className="font-serif font-black text-xl text-on-surface mb-4 flex items-center gap-2">
+                      <span className="w-1.5 h-6 bg-[#ba1a1a] rounded"></span>
+                      मनोरंजन जगत
+                    </h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                      {entertainmentArticles.map((article) => {
+                        const display = getDisplayArticle(article);
+                        return (
+                          <article 
+                            key={article.id}
+                            onClick={() => onSelectArticle && onSelectArticle(article)}
+                            className="bg-white rounded-2xl md:rounded-[18px] card-shadow border border-outline-variant/10 overflow-hidden group h-full flex flex-col transition-all hover:-translate-y-1 relative cursor-pointer"
+                          >
+                            {(!currentUser || currentUser.role === 'user') && (
+                              <button
+                                onClick={(e) => handleToggleBookmark(e, article.id)}
+                                className="absolute top-3 right-3 bg-white/90 hover:bg-white backdrop-blur-sm p-1.5 rounded-full shadow-md text-on-surface hover:text-primary transition-all flex items-center justify-center z-10"
+                              >
+                                <span className="material-symbols-outlined text-lg font-bold">
+                                  {bookmarkedIds.includes(article.id) ? 'bookmark' : 'bookmark_border'}
+                                </span>
+                              </button>
+                            )}
+                            <div className="h-36 relative overflow-hidden shrink-0">
+                              <img className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src={display.image} alt={display.title} />
+                              <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-md font-label-caps text-[9px] font-bold text-on-surface uppercase select-none">{display.category}</div>
+                            </div>
+                            <div className="p-4 flex flex-col flex-1 justify-between gap-3">
+                              <div className="flex flex-col gap-2">
+                                <h3 className="font-serif text-xs md:text-sm font-bold leading-snug group-hover:text-primary transition-colors text-[#191c1e] line-clamp-2">{display.title}</h3>
+                                <p className="font-body-md text-[10px] md:text-[11px] text-on-surface-variant line-clamp-2 leading-relaxed">{display.summary}</p>
+                              </div>
+                              <div className="border-t border-outline-variant/10 pt-3 mt-1 text-[9px] md:text-[10px] text-on-surface-variant flex items-center justify-between">
+                                <span className="font-bold truncate mr-2">{display.sourceName || display.author}</span>
+                                <span className="flex items-center gap-0.5 shrink-0"><span className="material-symbols-outlined text-xs" style={{ fontSize: '10px' }}>schedule</span> {display.readTime}</span>
+                              </div>
+                            </div>
+                          </article>
+                        );
+                      })}
                     </div>
                   </div>
+                )}
 
-                </div>
-              </section>
-              );
-            })()}
-
-            {/* Aggregator Navigation / Tabs Bar */}
-            <section id="news-feed" className="border-b border-black/10 pb-1 mt-2 md:mt-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 sm:gap-6 md:gap-8 font-bold text-xs sm:text-sm text-on-surface-variant select-none overflow-x-auto no-scrollbar pb-2 flex-1">
-                  <button 
-                    onClick={() => { setActiveTab('all'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                    className={`shrink-0 pb-1 relative font-extrabold whitespace-nowrap ${activeTab === 'all' ? 'text-primary' : 'hover:text-primary'}`}
-                  >
-                    सभी सुर्खियाँ
-                    {activeTab === 'all' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary"></div>}
-                  </button>
-                  <button 
-                    onClick={() => { setActiveTab('local'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                    className={`shrink-0 pb-1 relative font-extrabold flex items-center gap-1 whitespace-nowrap ${activeTab === 'local' ? 'text-primary' : 'hover:text-primary'}`}
-                  >
-                    <span className="material-symbols-outlined text-base">location_on</span>
-                    <span className="hidden sm:inline">स्थानीय समाचार (हल्द्वानी)</span>
-                    <span className="sm:hidden">स्थानीय</span>
-                    {activeTab === 'local' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary"></div>}
-                  </button>
-                  <button 
-                    onClick={() => { setActiveTab('national'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                    className={`shrink-0 pb-1 relative font-extrabold flex items-center gap-1 whitespace-nowrap ${activeTab === 'national' ? 'text-primary' : 'hover:text-primary'}`}
-                  >
-                    <span className="material-symbols-outlined text-base">flag</span>
-                    <span className="hidden sm:inline">राष्ट्रीय (भारत)</span>
-                    <span className="sm:hidden">राष्ट्रीय</span>
-                    {activeTab === 'national' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary"></div>}
-                  </button>
-                  <button 
-                    onClick={() => { setActiveTab('international'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                    className={`shrink-0 pb-1 relative font-extrabold flex items-center gap-1 whitespace-nowrap ${activeTab === 'international' ? 'text-primary' : 'hover:text-primary'}`}
-                  >
-                    <span className="material-symbols-outlined text-base">public</span>
-                    <span className="hidden sm:inline">अंतर्राष्ट्रीय (विश्व)</span>
-                    <span className="sm:hidden">विश्व</span>
-                    {activeTab === 'international' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary"></div>}
-                  </button>
-                </div>
-                
-                <div className="text-[10px] md:text-xs text-on-surface-variant font-bold select-none shrink-0 hidden sm:block">
-                  {finalDisplayArticles.length} खबरें
-                </div>
-              </div>
-            </section>
-
-            {/* Main Aggregator Feed: Responsive Grid */}
-            {finalDisplayArticles.length === 0 ? (
-              <div className="text-center py-12 md:py-16 bg-[#f8fafc] rounded-2xl md:rounded-3xl border border-slate-200/60 my-4">
-                <span className="material-symbols-outlined text-4xl md:text-5xl text-slate-400 mb-3 block">search_off</span>
-                <h3 className="text-base md:text-lg font-bold text-slate-700">कोई समाचार नहीं मिला</h3>
-                <p className="text-xs md:text-sm text-slate-400 mt-1 px-6">आपके फ़िल्टर से मेल खाने वाला कोई लेख नहीं मिला। कोई अन्य श्रेणी चुनें या खोज फ़िल्टर हटाएँ।</p>
+                {/* AD 7: Last Content Ad */}
+                <AdPlaceholder id="AD 7" size="728x90 - Horizontal Banner" type="LAST CONTENT AD" description="Increase page RPM" />
               </div>
             ) : (
-              <div className="flex flex-col gap-8">
-                <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
-                  {finalDisplayArticles.slice(0, visibleCount).map((article) => {
-                    const display = getDisplayArticle(article);
-                    const liveData = parseLiveTitle(display.title);
-                    return (
-                    <article 
-                      key={article.id}
-                      onClick={() => onSelectArticle && onSelectArticle(article)}
-                      className="bg-white rounded-2xl md:rounded-[18px] card-shadow border border-outline-variant/10 overflow-hidden group h-fit transition-all hover:-translate-y-1 relative cursor-pointer"
-                    >
-                      {(!currentUser || currentUser.role === 'user') && (
-                        <button
-                          onClick={(e) => handleToggleBookmark(e, article.id)}
-                          className="absolute top-3 right-3 bg-white/90 hover:bg-white backdrop-blur-sm p-1.5 rounded-full shadow-md text-on-surface hover:text-primary transition-all flex items-center justify-center z-10"
-                        >
-                          <span className="material-symbols-outlined text-lg font-bold">
-                            {bookmarkedIds.includes(article.id) ? 'bookmark' : 'bookmark_border'}
-                          </span>
-                        </button>
-                      )}
+              // Non-default category/tab page rendering (simple grid)
+              <div className="flex flex-col gap-6 md:gap-8">
+                {/* Banner Ad below header */}
+                <AdPlaceholder id="AD 2" size="728x90 - Horizontal Ad" type="BELOW HEADER AD" description="Good for mid-page visibility" />
 
-                      <div className="h-44 sm:h-48 md:h-52 relative overflow-hidden">
-                        <img 
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
-                          src={display.image} 
-                          alt={display.title}
-                          loading="lazy"
-                        />
-                        <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-md font-label-caps text-[9px] font-bold text-on-surface uppercase select-none flex items-center gap-1.5">
-                          {display.category}
-                          {liveData && (
-                            <span className="w-1.5 h-1.5 bg-[#ba1a1a] rounded-full animate-pulse"></span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="p-4 md:p-6 flex flex-col gap-2 md:gap-3">
-                        {liveData ? (
-                          <>
-                            <h3 className="font-serif text-base md:text-lg lg:text-xl font-bold leading-snug group-hover:text-primary transition-colors text-[#191c1e] flex items-center gap-2">
-                              <span className="inline-flex items-center gap-1 bg-[#ba1a1a] text-white px-1.5 py-0.5 text-[9px] rounded font-bold uppercase tracking-wider animate-pulse shrink-0">LIVE</span>
-                              {liveData.prefix}
-                            </h3>
-                            <div className="flex flex-col gap-2 mt-1 bg-slate-50 p-3 rounded-xl border border-slate-100/60">
-                              {liveData.headlines.slice(0, 3).map((hl, idx) => (
-                                <div key={idx} className="flex gap-2 items-start border-b border-dashed border-slate-200/50 last:border-0 pb-2 mb-2 last:pb-0 last:mb-0">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-red-600 mt-2 shrink-0 animate-pulse"></span>
-                                  <p className="font-serif text-xs md:text-sm text-slate-700 font-bold group-hover:text-slate-900 leading-snug line-clamp-2">
-                                    {hl}
-                                  </p>
-                                </div>
-                              ))}
-                              {liveData.headlines.length > 3 && (
-                                <span className="text-[10px] text-primary font-bold self-start mt-0.5">
-                                  + {liveData.headlines.length - 3} updates...
-                                </span>
-                              )}
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <h3 className="font-serif text-base md:text-lg lg:text-xl font-bold leading-snug group-hover:text-primary transition-colors text-[#191c1e]">
-                              {display.title}
-                            </h3>
-                            <p className="font-body-md text-xs md:text-sm text-on-surface-variant line-clamp-2 md:line-clamp-3 leading-relaxed">
-                              {display.summary}
-                            </p>
-                          </>
-                        )}
-                        
-                        <div className="flex flex-col gap-1 md:gap-2 border-t border-outline-variant/10 pt-3 md:pt-4 mt-1 md:mt-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] md:text-xs text-on-surface-variant font-bold truncate mr-2">{display.sourceName || display.author}</span>
-                            <span className="text-[11px] md:text-xs text-on-surface-variant flex items-center gap-0.5 font-semibold shrink-0">
-                              <span className="material-symbols-outlined text-sm">schedule</span> {display.readTime}
-                            </span>
-                          </div>
-                          {display.sourceName && (
-                            <div className="text-[9px] md:text-[10px] text-slate-400 italic font-medium">
-                              {`${display.sourceName} से संकलित`}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </article>
-                    );
-                  })}
+                {/* Grid Navigation */}
+                <section id="news-feed" className="border-b border-black/10 pb-1 mt-2 md:mt-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 sm:gap-6 md:gap-8 font-bold text-xs sm:text-sm text-on-surface-variant select-none overflow-x-auto no-scrollbar pb-2 flex-1">
+                      <button 
+                        onClick={() => { setActiveTab('all'); }}
+                        className={`shrink-0 pb-1 relative font-extrabold whitespace-nowrap ${activeTab === 'all' ? 'text-primary' : 'hover:text-primary'}`}
+                      >
+                        सभी सुर्खियाँ
+                        {activeTab === 'all' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary"></div>}
+                      </button>
+                      <button 
+                        onClick={() => { setActiveTab('local'); }}
+                        className={`shrink-0 pb-1 relative font-extrabold flex items-center gap-1 whitespace-nowrap ${activeTab === 'local' ? 'text-primary' : 'hover:text-primary'}`}
+                      >
+                        <span className="material-symbols-outlined text-base">location_on</span>
+                        <span>स्थानीय समाचार</span>
+                        {activeTab === 'local' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary"></div>}
+                      </button>
+                      <button 
+                        onClick={() => { setActiveTab('national'); }}
+                        className={`shrink-0 pb-1 relative font-extrabold flex items-center gap-1 whitespace-nowrap ${activeTab === 'national' ? 'text-primary' : 'hover:text-primary'}`}
+                      >
+                        <span className="material-symbols-outlined text-base">flag</span>
+                        <span>राष्ट्रीय</span>
+                        {activeTab === 'national' && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary"></div>}
+                      </button>
+                    </div>
+                    <div className="text-[10px] md:text-xs text-on-surface-variant font-bold select-none shrink-0">
+                      {finalDisplayArticles.length} खबरें
+                    </div>
+                  </div>
                 </section>
 
-                {finalDisplayArticles.length > visibleCount && (
-                  <div className="flex justify-center mt-6 select-none">
-                    <button 
-                      onClick={() => setVisibleCount(prev => prev + 12)}
-                      className="px-8 py-3 bg-white hover:bg-slate-50 text-primary border border-primary/20 rounded-full font-bold text-xs uppercase shadow-sm hover:shadow-md transition-all flex items-center gap-2 cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined text-sm font-black">expand_more</span>
-                      <span>और समाचार लोड करें (Load More)</span>
-                    </button>
+                {finalDisplayArticles.length === 0 ? (
+                  <div className="text-center py-12 md:py-16 bg-[#f8fafc] rounded-2xl md:rounded-3xl border border-slate-200/60 my-4">
+                    <span className="material-symbols-outlined text-4xl md:text-5xl text-slate-400 mb-3 block">search_off</span>
+                    <h3 className="text-base md:text-lg font-bold text-slate-700">कोई समाचार नहीं मिला</h3>
+                    <p className="text-xs md:text-sm text-slate-400 mt-1 px-6">आपके फ़िल्टर से मेल खाने वाला कोई लेख नहीं मिला।</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-8">
+                    <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
+                      {finalDisplayArticles.slice(0, visibleCount).map((article) => {
+                        const display = getDisplayArticle(article);
+                        const liveData = parseLiveTitle(display.title);
+                        return (
+                          <article 
+                            key={article.id}
+                            onClick={() => onSelectArticle && onSelectArticle(article)}
+                            className="bg-white rounded-2xl md:rounded-[18px] card-shadow border border-outline-variant/10 overflow-hidden group h-full flex flex-col transition-all hover:-translate-y-1 relative cursor-pointer"
+                          >
+                            {(!currentUser || currentUser.role === 'user') && (
+                              <button
+                                onClick={(e) => handleToggleBookmark(e, article.id)}
+                                className="absolute top-3 right-3 bg-white/90 hover:bg-white backdrop-blur-sm p-1.5 rounded-full shadow-md text-on-surface hover:text-primary transition-all flex items-center justify-center z-10"
+                              >
+                                <span className="material-symbols-outlined text-lg font-bold">
+                                  {bookmarkedIds.includes(article.id) ? 'bookmark' : 'bookmark_border'}
+                                </span>
+                              </button>
+                            )}
+                            <div className="h-44 sm:h-48 md:h-52 relative overflow-hidden shrink-0">
+                              <img className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" src={display.image} alt={display.title} loading="lazy" />
+                              <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-md px-2 py-0.5 rounded-md font-label-caps text-[9px] font-bold text-on-surface uppercase select-none flex items-center gap-1.5">
+                                {display.category}
+                              </div>
+                            </div>
+                            <div className="p-4 md:p-6 flex flex-col flex-1 justify-between gap-3">
+                              <div className="flex flex-col gap-2 md:gap-3">
+                                <h3 className="font-serif text-base md:text-lg lg:text-xl font-bold leading-snug group-hover:text-primary transition-colors text-[#191c1e] line-clamp-2">{display.title}</h3>
+                                <p className="font-body-md text-xs md:text-sm text-on-surface-variant line-clamp-2 md:line-clamp-3 leading-relaxed">{display.summary}</p>
+                              </div>
+                              <div className="border-t border-outline-variant/10 pt-3 md:pt-4 mt-1 md:mt-2 text-[10px] md:text-xs text-on-surface-variant flex items-center justify-between">
+                                <span className="font-bold truncate mr-2">{display.sourceName || display.author}</span>
+                                <span className="flex items-center gap-0.5 shrink-0"><span className="material-symbols-outlined text-sm">schedule</span> {display.readTime}</span>
+                              </div>
+                            </div>
+                          </article>
+                        );
+                      })}
+                    </section>
+                    
+                    {finalDisplayArticles.length > visibleCount && (
+                      <div className="flex justify-center mt-6 select-none">
+                        <button 
+                          onClick={() => setVisibleCount(prev => prev + 12)}
+                          className="px-8 py-3 bg-white hover:bg-slate-50 text-primary border border-primary/20 rounded-full font-bold text-xs uppercase shadow-sm hover:shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-sm font-black">expand_more</span>
+                          <span>और समाचार लोड करें (Load More)</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
+
+                <AdPlaceholder id="AD 7" size="728x90 - Horizontal Banner" type="LAST CONTENT AD" description="Increase page RPM" />
               </div>
             )}
           </>
         )}
-
       </div>
     </div>
   );
