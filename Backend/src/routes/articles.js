@@ -320,4 +320,106 @@ router.put('/ads', (req, res) => {
   );
 });
 
+// ==========================================
+// AD BIDDING SYSTEM
+// ==========================================
+
+// Ensure ad_bids table exists
+db.query(
+  `CREATE TABLE IF NOT EXISTS ad_bids (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    business_name VARCHAR(255) NOT NULL,
+    contact_email VARCHAR(255) NOT NULL,
+    contact_phone VARCHAR(50),
+    ad_title VARCHAR(255) NOT NULL,
+    ad_description TEXT,
+    ad_image_url TEXT NOT NULL,
+    ad_target_url TEXT,
+    slot_preference VARCHAR(50) DEFAULT 'Any',
+    bid_amount DECIMAL(10, 2) NOT NULL,
+    duration_days INT DEFAULT 7,
+    status ENUM('pending', 'active', 'expired', 'rejected') DEFAULT 'pending',
+    admin_notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  ) ENGINE=InnoDB`,
+  [],
+  (err) => {
+    if (err) console.error('[AdBidsInit] Failed to create ad_bids table:', err.message);
+  }
+);
+
+// @route   POST /api/articles/ad-bids
+// @desc    User submits a new ad bid
+router.post('/ad-bids', (req, res) => {
+  const { user_id, business_name, contact_email, contact_phone, ad_title, ad_description, ad_image_url, ad_target_url, slot_preference, bid_amount, duration_days } = req.body;
+
+  if (!user_id || !business_name || !contact_email || !ad_title || !ad_image_url || !bid_amount) {
+    return res.status(400).json({ message: 'Business name, contact email, ad title, ad image, and bid amount are required.' });
+  }
+
+  if (parseFloat(bid_amount) < 100) {
+    return res.status(400).json({ message: 'Minimum bid amount is ₹100.' });
+  }
+
+  db.query(
+    `INSERT INTO ad_bids (user_id, business_name, contact_email, contact_phone, ad_title, ad_description, ad_image_url, ad_target_url, slot_preference, bid_amount, duration_days)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [user_id, business_name, contact_email, contact_phone || '', ad_title, ad_description || '', ad_image_url, ad_target_url || '', slot_preference || 'Any', bid_amount, duration_days || 7],
+    (err, result) => {
+      if (err) return res.status(500).json({ message: 'Failed to submit ad bid.', error: err.message });
+      res.status(201).json({ message: 'Ad bid submitted successfully! Our team will review it.', id: result.insertId });
+    }
+  );
+});
+
+// @route   GET /api/articles/ad-bids/user/:userId
+// @desc    Get all bids by a specific user
+router.get('/ad-bids/user/:userId', (req, res) => {
+  db.query(
+    'SELECT * FROM ad_bids WHERE user_id = ? ORDER BY created_at DESC',
+    [req.params.userId],
+    (err, rows) => {
+      if (err) return res.status(500).json({ message: 'Failed to fetch user bids.', error: err.message });
+      res.json(rows);
+    }
+  );
+});
+
+// @route   GET /api/articles/ad-bids
+// @desc    Get all ad bids (admin view), ordered by highest bid first
+router.get('/ad-bids', (req, res) => {
+  db.query(
+    `SELECT b.*, u.username as bidder_name 
+     FROM ad_bids b 
+     LEFT JOIN users u ON b.user_id = u.id 
+     ORDER BY b.bid_amount DESC, b.created_at DESC`,
+    [],
+    (err, rows) => {
+      if (err) return res.status(500).json({ message: 'Failed to fetch bids.', error: err.message });
+      res.json(rows);
+    }
+  );
+});
+
+// @route   PUT /api/articles/ad-bids/:id/status
+// @desc    Admin approve/reject a bid
+router.put('/ad-bids/:id/status', (req, res) => {
+  const { status, admin_notes } = req.body;
+  const validStatuses = ['pending', 'active', 'expired', 'rejected'];
+
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({ message: 'Invalid status.' });
+  }
+
+  db.query(
+    'UPDATE ad_bids SET status = ?, admin_notes = ? WHERE id = ?',
+    [status, admin_notes || '', req.params.id],
+    (err) => {
+      if (err) return res.status(500).json({ message: 'Failed to update bid status.', error: err.message });
+      res.json({ message: `Bid #${req.params.id} status updated to ${status}.` });
+    }
+  );
+});
+
 export default router;
