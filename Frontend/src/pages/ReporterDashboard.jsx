@@ -50,8 +50,10 @@ function ReporterDashboard({ onRefreshArticles }) {
       const res = await fetch(`${API_BASE_URL}/auth/register/reporter`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, email, password }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Registration failed.');
-      setSuccessMsg('Reporter account created! You can now log in.');
-      setAuthMode('login'); setUsername(''); setPassword('');
+      localStorage.setItem('ht_user', JSON.stringify(data.user));
+      setCurrentUser(data.user);
+      setUsername(''); setEmail(''); setPassword('');
+      window.location.href = '/';
     } catch (err) { setErrorMsg(err.message); }
   };
 

@@ -20,10 +20,18 @@ function AdminDashboard({ onRefreshArticles }) {
   const [selectedAdSlot, setSelectedAdSlot] = useState('AD 1');
   const [adImageUrl, setAdImageUrl] = useState('');
   const [adTargetUrl, setAdTargetUrl] = useState('');
+  const [adTitle, setAdTitle] = useState('');
+  const [adDescription, setAdDescription] = useState('');
 
   const [blogTitle, setBlogTitle] = useState('');
   const [blogContent, setBlogContent] = useState('');
   const [blogImageUrl, setBlogImageUrl] = useState('');
+
+  // Media Library state
+  const [mediaList, setMediaList] = useState([]);
+  const [mediaUploading, setMediaUploading] = useState(false);
+  const [isSelectorOpen, setIsSelectorOpen] = useState(false);
+  const [selectorTarget, setSelectorTarget] = useState(''); // 'blog' or 'ad'
 
   useEffect(() => {
     const savedUser = localStorage.getItem('ht_user');
@@ -35,13 +43,61 @@ function AdminDashboard({ onRefreshArticles }) {
   }, []);
 
   useEffect(() => {
-    if (currentUser) { fetchPendingArticles(); fetchReporters(); fetchAds(); fetchAdBids(); }
+    if (currentUser) { fetchPendingArticles(); fetchReporters(); fetchAds(); fetchAdBids(); fetchMediaList(); }
   }, [currentUser]);
 
   const fetchPendingArticles = async () => { try { const res = await fetch(`${API_BASE_URL}/articles/pending`); if (res.ok) setPendingArticles(await res.json()); } catch (err) { console.error(err); } };
   const fetchReporters = async () => { try { const res = await fetch(`${API_BASE_URL}/articles/admin/reporters`); if (res.ok) setReportersList(await res.json()); } catch (err) { console.error(err); } };
   const fetchAds = async () => { try { const res = await fetch(`${API_BASE_URL}/articles/ads`); if (res.ok) setAdsList(await res.json()); } catch (err) { console.error(err); } };
   const fetchAdBids = async () => { try { const res = await fetch(`${API_BASE_URL}/articles/ad-bids`); if (res.ok) setAdBids(await res.json()); } catch (err) { console.error(err); } };
+  const fetchMediaList = async () => { try { const res = await fetch(`${API_BASE_URL}/media`); if (res.ok) setMediaList(await res.json()); } catch (err) { console.error(err); } };
+
+  const handleMediaUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setMediaUploading(true); setErrorMsg(''); setSuccessMsg('');
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res = await fetch(`${API_BASE_URL}/media/upload`, {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Upload failed.');
+      setSuccessMsg('Media uploaded successfully!');
+      fetchMediaList();
+    } catch (err) {
+      setErrorMsg(err.message);
+    } finally {
+      setMediaUploading(false);
+    }
+  };
+
+  const handleDeleteMedia = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this media item?')) return;
+    setErrorMsg(''); setSuccessMsg('');
+    try {
+      const res = await fetch(`${API_BASE_URL}/media/${id}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Deletion failed.');
+      setSuccessMsg('Media item deleted.');
+      fetchMediaList();
+    } catch (err) {
+      setErrorMsg(err.message);
+    }
+  };
+
+  const handleSelectMedia = (url) => {
+    if (selectorTarget === 'blog') {
+      setBlogImageUrl(url);
+    } else if (selectorTarget === 'ad') {
+      setAdImageUrl(url);
+    }
+    setIsSelectorOpen(false);
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault(); setErrorMsg(''); setSuccessMsg('');
@@ -57,11 +113,12 @@ function AdminDashboard({ onRefreshArticles }) {
   const handleRegister = async (e) => {
     e.preventDefault(); setErrorMsg(''); setSuccessMsg('');
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/register/user`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, email, password }) });
+      const res = await fetch(`${API_BASE_URL}/auth/register/admin`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, email, password }) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Registration failed.');
-      setSuccessMsg('Account created! Note: Only existing admins can grant admin access. Please contact the system administrator.');
-      setAuthMode('login'); setUsername(''); setPassword('');
+      localStorage.setItem('ht_user', JSON.stringify(data.user));
+      setCurrentUser(data.user);
+      setUsername(''); setEmail(''); setPassword('');
     } catch (err) { setErrorMsg(err.message); }
   };
 
@@ -70,16 +127,40 @@ function AdminDashboard({ onRefreshArticles }) {
   const handleUpdateAd = async (e) => {
     e.preventDefault(); setErrorMsg(''); setSuccessMsg('');
     try {
-      const res = await fetch(`${API_BASE_URL}/articles/ads`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ slot_id: selectedAdSlot, image_url: adImageUrl, target_url: adTargetUrl }) });
+      const res = await fetch(`${API_BASE_URL}/articles/ads`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slot_id: selectedAdSlot,
+          image_url: adImageUrl,
+          target_url: adTargetUrl,
+          title: selectedAdSlot.startsWith('SLIDER') ? adTitle : null,
+          description: selectedAdSlot.startsWith('SLIDER') ? adDescription : null
+        })
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to update ad.');
-      setSuccessMsg(`Ad slot ${selectedAdSlot} updated successfully!`); fetchAds(); if (onRefreshArticles) onRefreshArticles();
+      setSuccessMsg(`Ad slot ${selectedAdSlot} updated successfully!`); 
+      setAdImageUrl('');
+      setAdTargetUrl('');
+      setAdTitle('');
+      setAdDescription('');
+      fetchAds(); 
+      if (onRefreshArticles) onRefreshArticles();
     } catch (err) { setErrorMsg(err.message); }
   };
 
   useEffect(() => {
-    if (adsList.length > 0) { const s = adsList.find(ad => ad.slot_id === selectedAdSlot); if (s) { setAdImageUrl(s.image_url || ''); setAdTargetUrl(s.target_url || ''); } }
-  }, [selectedAdSlot, adsList]);
+    if (adsList.length > 0) {
+      const s = adsList.find(ad => ad.slot_id === selectedAdSlot);
+      if (s) {
+        setAdImageUrl(s.image_url || '');
+        setAdTargetUrl(s.target_url || '');
+        setAdTitle(s.title || '');
+        setAdDescription(s.description || '');
+      }
+    }
+  }, [selectedAdSlot]);
 
   const handleUpdateArticleStatus = async (id, status) => {
     try { const res = await fetch(`${API_BASE_URL}/articles/${id}/status`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) }); if (res.ok) { fetchPendingArticles(); if (onRefreshArticles) onRefreshArticles(); } } catch (err) { console.error(err); }
@@ -110,6 +191,7 @@ function AdminDashboard({ onRefreshArticles }) {
     { id: 'reporters', icon: 'group', label: 'Reporters' },
     { id: 'ads', icon: 'campaign', label: 'Manage Ads' },
     { id: 'bids', icon: 'gavel', label: 'Ad Bids', badge: adBids.filter(b => b.status === 'pending').length },
+    { id: 'media', icon: 'perm_media', label: 'Media Gallery' },
     { id: 'blog', icon: 'post_add', label: 'Write Blog' },
   ];
 
@@ -370,18 +452,57 @@ function AdminDashboard({ onRefreshArticles }) {
                 <form onSubmit={handleUpdateAd} className="lg:col-span-2 bg-white border border-slate-200 rounded-lg p-6 flex flex-col gap-4">
                   <div className="flex flex-col gap-1"><label className="text-xs font-bold text-slate-600">Ad Slot</label>
                     <select value={selectedAdSlot} onChange={(e) => setSelectedAdSlot(e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm font-medium bg-white cursor-pointer">
-                      <option value="AD 1">AD 1 - 728x90 Leaderboard (Top)</option><option value="AD 2">AD 2 - 728x90 Below Header</option><option value="AD 3">AD 3 - 300x250 Sidebar</option><option value="AD 4">AD 4 - 728x90 Mid-Page</option><option value="AD 5">AD 5 - 300x600 Half Page</option><option value="AD 6">AD 6 - 728x90 Pre-Footer</option><option value="AD 7">AD 7 - 728x90 Last Ad</option>
+                      <option value="AD 1">AD 1 - 728x90 Leaderboard (Top)</option>
+                      <option value="AD 2">AD 2 - 728x90 Below Header</option>
+                      <option value="AD 3">AD 3 - 300x250 Sidebar</option>
+                      <option value="AD 4">AD 4 - 728x90 Mid-Page</option>
+                      <option value="AD 5">AD 5 - 300x600 Half Page</option>
+                      <option value="AD 6">AD 6 - 728x90 Pre-Footer</option>
+                      <option value="AD 7">AD 7 - 728x90 Last Ad</option>
+                      <option value="SLIDER 1">SLIDER 1 - Home Banner Slide 1 (1200x300)</option>
+                      <option value="SLIDER 2">SLIDER 2 - Home Banner Slide 2 (1200x300)</option>
+                      <option value="SLIDER 3">SLIDER 3 - Home Banner Slide 3 (1200x300)</option>
                     </select>
                   </div>
-                  <div className="flex flex-col gap-1"><label className="text-xs font-bold text-slate-600">Image URL</label><input type="url" required value={adImageUrl} onChange={(e) => setAdImageUrl(e.target.value)} placeholder="https://..." className="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm" /></div>
+                  {selectedAdSlot.startsWith('SLIDER') && (
+                    <>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs font-bold text-slate-600">Ad Slide Title *</label>
+                        <input type="text" required value={adTitle} onChange={(e) => setAdTitle(e.target.value)} placeholder="e.g. Kumaon Luxury Retreats" className="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-indigo-500 outline-none text-sm" />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs font-bold text-slate-600">Ad Slide Description *</label>
+                        <textarea required value={adDescription} onChange={(e) => setAdDescription(e.target.value)} placeholder="e.g. Experience pure tranquility in the lap of nature..." className="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-indigo-500 outline-none text-sm" rows="2" />
+                      </div>
+                    </>
+                  )}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-bold text-slate-600">Image URL</label>
+                    <div className="flex gap-2">
+                      <input type="url" required value={adImageUrl} onChange={(e) => setAdImageUrl(e.target.value)} placeholder="https://..." className="flex-1 px-3 py-2.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm" />
+                      <button type="button" onClick={() => { setSelectorTarget('ad'); setIsSelectorOpen(true); }} className="bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 px-3 rounded-lg text-xs font-bold transition-colors shrink-0 flex items-center gap-1"><span className="material-symbols-outlined text-sm">perm_media</span>Gallery</button>
+                    </div>
+                  </div>
                   <div className="flex flex-col gap-1"><label className="text-xs font-bold text-slate-600">Target URL</label><input type="url" value={adTargetUrl} onChange={(e) => setAdTargetUrl(e.target.value)} placeholder="https://..." className="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm" /></div>
                   <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase py-2.5 px-5 rounded-lg self-start cursor-pointer transition-colors">Publish Campaign</button>
                 </form>
                 <div className="bg-white border border-slate-200 rounded-lg p-5 flex flex-col gap-3">
                   <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Live Preview</h4>
-                  <div className="text-xs text-slate-500 pb-2 border-b border-slate-100 flex justify-between"><span className="font-bold text-slate-800">{selectedAdSlot}</span><span>{selectedAdSlot === 'AD 3' ? '300x250' : selectedAdSlot === 'AD 5' ? '300x600' : '728x90'}</span></div>
-                  {adImageUrl ? <div className="rounded-lg overflow-hidden border border-slate-100" style={{height: selectedAdSlot === 'AD 5' ? '200px' : selectedAdSlot === 'AD 3' ? '150px' : '70px'}}><img src={adImageUrl} alt="Preview" className="w-full h-full object-cover" /></div>
-                  : <div className="border border-dashed border-slate-200 rounded-lg flex items-center justify-center text-slate-400 text-xs" style={{height:'90px'}}>No image uploaded</div>}
+                  <div className="text-xs text-slate-500 pb-2 border-b border-slate-100 flex justify-between">
+                    <span className="font-bold text-slate-800">{selectedAdSlot}</span>
+                    <span>{selectedAdSlot.startsWith('SLIDER') ? '1200x300' : selectedAdSlot === 'AD 3' ? '300x250' : selectedAdSlot === 'AD 5' ? '300x600' : '728x90'}</span>
+                  </div>
+                  {adImageUrl ? (
+                    <div className="rounded-lg overflow-hidden border border-slate-100 relative flex flex-col justify-end" style={{height: selectedAdSlot.startsWith('SLIDER') ? '130px' : selectedAdSlot === 'AD 5' ? '200px' : selectedAdSlot === 'AD 3' ? '150px' : '70px'}}>
+                      <img src={adImageUrl} alt="Preview" className="w-full h-full object-cover" />
+                      {selectedAdSlot.startsWith('SLIDER') && (
+                        <div className="absolute inset-0 bg-black/60 p-4 flex flex-col justify-end text-white text-left">
+                          <h5 className="font-bold text-xs truncate">{adTitle || 'Slide Title'}</h5>
+                          <p className="text-[9px] text-slate-300 line-clamp-1 mt-0.5">{adDescription || 'Slide Description'}</p>
+                        </div>
+                      )}
+                    </div>
+                  ) : <div className="border border-dashed border-slate-200 rounded-lg flex items-center justify-center text-slate-400 text-xs" style={{height:'90px'}}>No image uploaded</div>}
                 </div>
               </div>
             </div>
@@ -393,7 +514,13 @@ function AdminDashboard({ onRefreshArticles }) {
               <div><h2 className="text-xl font-black text-slate-800">Write Blog</h2><p className="text-xs text-slate-400 mt-0.5">Publish a blog post directly to the main feed</p></div>
               <form onSubmit={handlePostBlog} className="bg-white border border-slate-200 rounded-lg p-6 flex flex-col gap-4 max-w-3xl">
                 <div className="flex flex-col gap-1"><label className="text-xs font-bold text-slate-600">Blog Title</label><input type="text" required value={blogTitle} onChange={(e) => setBlogTitle(e.target.value)} placeholder="Enter blog headline..." className="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm" /></div>
-                <div className="flex flex-col gap-1"><label className="text-xs font-bold text-slate-600">Cover Image URL</label><input type="url" value={blogImageUrl} onChange={(e) => setBlogImageUrl(e.target.value)} placeholder="https://images.unsplash.com/..." className="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm" /></div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold text-slate-600">Cover Image URL</label>
+                  <div className="flex gap-2">
+                    <input type="url" value={blogImageUrl} onChange={(e) => setBlogImageUrl(e.target.value)} placeholder="https://images.unsplash.com/..." className="flex-1 px-3 py-2.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm" />
+                    <button type="button" onClick={() => { setSelectorTarget('blog'); setIsSelectorOpen(true); }} className="bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 px-3 rounded-lg text-xs font-bold transition-colors shrink-0 flex items-center gap-1"><span className="material-symbols-outlined text-sm">perm_media</span>Gallery</button>
+                  </div>
+                </div>
                 <div className="flex flex-col gap-1"><label className="text-xs font-bold text-slate-600">Content</label><textarea rows="6" required value={blogContent} onChange={(e) => setBlogContent(e.target.value)} placeholder="Write your blog content..." className="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm" /></div>
                 <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase py-2.5 px-5 rounded-lg self-start cursor-pointer transition-colors">Publish Blog →</button>
               </form>
@@ -441,8 +568,98 @@ function AdminDashboard({ onRefreshArticles }) {
               </div>
             </div>
           )}
+
+          {/* MEDIA GALLERY */}
+          {adminTab === 'media' && (
+            <div className="flex flex-col gap-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-black text-slate-800">Media Gallery</h2>
+                  <p className="text-xs text-slate-400 mt-0.5">Upload images to Cloudinary (or fallback local directory) for your blogs and ads</p>
+                </div>
+                <div className="relative">
+                  <input type="file" id="media-upload-input" accept="image/*" onChange={handleMediaUpload} className="hidden" />
+                  <label htmlFor="media-upload-input" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase py-2.5 px-5 rounded-lg cursor-pointer transition-colors flex items-center gap-1.5 shadow-md">
+                    <span className="material-symbols-outlined text-sm font-black">upload</span>
+                    {mediaUploading ? 'Uploading...' : 'Upload Image'}
+                  </label>
+                </div>
+              </div>
+
+              {mediaList.length === 0 ? (
+                <div className="bg-white border border-slate-200 rounded-lg p-12 text-center text-xs text-slate-400">
+                  No images uploaded yet. Click the "Upload Image" button to upload your first image.
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {mediaList.map((media) => (
+                    <div key={media.id} className="bg-white border border-slate-200 rounded-lg overflow-hidden group relative flex flex-col justify-between">
+                      <div className="aspect-square bg-slate-50 border-b border-slate-100 overflow-hidden relative">
+                        <img src={media.url} alt={media.filename} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(media.url);
+                              alert('Copied secure URL to clipboard!');
+                            }}
+                            className="w-8 h-8 rounded-full bg-white hover:bg-indigo-50 text-indigo-600 flex items-center justify-center transition-colors"
+                            title="Copy URL"
+                          >
+                            <span className="material-symbols-outlined text-base">content_copy</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteMedia(media.id)}
+                            className="w-8 h-8 rounded-full bg-white hover:bg-red-50 text-red-600 flex items-center justify-center transition-colors"
+                            title="Delete"
+                          >
+                            <span className="material-symbols-outlined text-base">delete</span>
+                          </button>
+                        </div>
+                      </div>
+                      <div className="p-3 text-[10px] text-slate-500 font-bold truncate select-all">{media.filename}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </main>
+
+      {/* SELECTOR MODAL FOR IMAGES */}
+      {isSelectorOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setIsSelectorOpen(false)}>
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[80vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-white shrink-0">
+              <div>
+                <h3 className="text-base font-black text-slate-800">Select Image from Media Gallery</h3>
+                <p className="text-[10px] text-slate-400 mt-0.5">Click any image to auto-fill your URL input field</p>
+              </div>
+              <button onClick={() => setIsSelectorOpen(false)} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors cursor-pointer"><span className="material-symbols-outlined text-base text-slate-600">close</span></button>
+            </div>
+            <div className="p-6 overflow-y-auto flex-1 bg-slate-50/50">
+              {mediaList.length === 0 ? (
+                <div className="text-center text-xs text-slate-400 py-12">No media files available. Please upload images in the "Media Gallery" first.</div>
+              ) : (
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+                  {mediaList.map((media) => (
+                    <div
+                      key={media.id}
+                      onClick={() => handleSelectMedia(media.url)}
+                      className="bg-white border border-slate-200 rounded-lg overflow-hidden cursor-pointer hover:border-indigo-500 hover:shadow-md transition-all aspect-square relative group"
+                    >
+                      <img src={media.url} alt={media.filename} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-indigo-600/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span className="bg-indigo-600 text-white font-bold text-[9px] uppercase px-2 py-1 rounded">Select</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

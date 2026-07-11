@@ -1,9 +1,15 @@
 import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import authRoutes from './routes/auth.js';
 import articleRoutes from './routes/articles.js';
+import mediaRoutes from './routes/media.js';
 import { performNewsSync } from './services/newsSync.js';
 
 const app = express();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Simple zero-dependency CORS configuration
 app.use((req, res, next) => {
@@ -20,9 +26,13 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Expose uploads directory statically
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // Register API routers
 app.use('/api/auth', authRoutes);
 app.use('/api/articles', articleRoutes);
+app.use('/api/media', mediaRoutes);
 
 // Manual news sync trigger (for dev/testing)
 app.post('/api/admin/sync-now', async (req, res) => {

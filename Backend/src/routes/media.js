@@ -1,0 +1,183 @@
+import express from 'express';
+import multer from 'multer';
+import { v2 as cloudinary } from 'cloudinary';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import db from '../config/db.js';
+
+const router = express.Router();
+
+// Define __dirname in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// ========================================
+// AUTO-CREATE MEDIA TABLE
+// ========================================
+db.query(`CREATE TABLE IF NOT EXISTS media_library (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  filename VARCHAR(255) NOT NULL,
+  url TEXT NOT NULL,
+  cloudinary_id VARCHAR(255) DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB`, [], (err) => {
+  if (err) console.error('[MediaInit] Failed to create media_library table:', err.message);
+});
+
+// Configure local uploads directory fallback
+const uploadsDir = path.join(__dirname, '../../uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Check Cloudinary credentials
+const hasCloudinary = process.env.CLOUDINARY_URL || 
+                      (process.env.CLOUDINARY_CLOUD_NAME && 
+                       process.env.CLOUDINARY_API_KEY && 
+                       process.env.CLOUDINARY_API_SECRET);
+
+if (hasCloudinary) {
+  console.log('[Media] Cloudinary credentials found. Using Cloudinary storage.');
+  if (process.env.CLOUDINARY_URL) {
+    // Cloudinary automatically picks up process.env.CLOUDINARY_URL if we call config
+    cloudinary.config(true); 
+  } else {
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET
+    });
+  }
+} else {
+  console.log('[Media] Cloudinary credentials missing or incomplete. Using Local storage fallback.');
+}
+
+// Multer Setup
+const storage = hasCloudinary 
+  ? multer.memoryStorage()
+  : multer.diskStorage({
+      destination: (req, file, cb) => {
+        cb(null, uploadsDir);
+      },
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+      }
+    });
+
+const upload = multer({ storage });
+
+// @route   POST /api/media/upload
+// @desc    Upload an image (Cloudinary or Local fallback)
+router.post('/upload', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded.' });
+    }
+
+    let url = '';
+    let cloudinaryId = null;
+
+    if (hasCloudinary) {
+      // Cloudinary stream upload
+      const uploadStream = () => {
+        return new Promise((resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            { folder: 'haldwani_times' },
+            (error, result) => {
+              if (error) return reject(error);
+              resolve(result);
+            }
+          );
+          stream.end(req.file.buffer);
+        });
+      };
+
+      const result = await uploadStream();
+      url = result.secure_url;
+      cloudinaryId = result.public_id;
+    } else {
+      // Local URL fallback
+      const filename = req.file.filename;
+      url = `http://localhost:5000/uploads/${filename}`;
+    }
+
+    // Save to database
+    db.query(
+      'INSERT INTO media_library (filename, url, cloudinary_id) VALUES (?, ?, ?)',
+      [req.file.originalname, url, cloudinaryId],
+      (err, result) => {
+        if (err) {
+          return res.status(500).json({ message: 'Failed to save media metadata.', error: err.message });
+        }
+
+        res.status(201).json({
+          id: result.insertId,
+          filename: req.file.originalname,
+          url,
+          created_at: new Date()
+        });
+      }
+    );
+
+  } catch (error) {
+    console.error('[UploadError]:', error);
+    res.status(500).json({ message: 'Image upload failed.', error: error.message });
+  }
+});
+
+// @route   GET /api/media
+// @desc    Get all uploaded media items
+router.get('/', (req, res) => {
+  db.query('SELECT * FROM media_library ORDER BY created_at DESC', (err, rows) => {
+    if (err) {
+      return res.status(500).json({ message: 'Failed to retrieve media library.', error: err.message });
+    }
+    res.json(rows);
+  });
+});
+
+// @route   DELETE /api/media/:id
+// @desc    Delete media item
+router.delete('/:id', async (req, res) => {
+  const mediaId = req.params.id;
+
+  db.query('SELECT * FROM media_library WHERE id = ?', [mediaId], async (err, rows) => {
+    if (err || rows.length === 0) {
+      return res.status(404).json({ message: 'Media item not found.' });
+    }
+
+    const item = rows[0];
+
+    // If Cloudinary, delete from Cloudinary
+    if (item.cloudinary_id && hasCloudinary) {
+      try {
+        await cloudinary.uploader.destroy(item.cloudinary_id);
+      } catch (cloudErr) {
+        console.error('[CloudinaryDeleteError]:', cloudErr);
+      }
+    } else if (!item.cloudinary_id) {
+      // Delete locally if it is a local file
+      const filename = path.basename(item.url);
+      const filePath = path.join(uploadsDir, filename);
+      if (fs.existsSync(filePath)) {
+        try {
+          fs.unlinkSync(filePath);
+        } catch (localErr) {
+          console.error('[LocalDeleteError]:', localErr);
+        }
+      }
+    }
+
+    // Delete from database
+    db.query('DELETE FROM media_library WHERE id = ?', [mediaId], (delErr) => {
+      if (delErr) {
+        return res.status(500).json({ message: 'Failed to delete media metadata.' });
+      }
+      res.json({ message: 'Media item deleted successfully.' });
+    });
+  });
+});
+
+export default router;

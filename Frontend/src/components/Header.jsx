@@ -4,6 +4,21 @@ function Header({ onNavigate, onSelectCategory, selectedCategory, onSearch, sear
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [loggedInUser, setLoggedInUser] = useState(null);
+  const [showProfileDrop, setShowProfileDrop] = useState(false);
+
+  // Check login state on mount and listen for storage changes
+  useEffect(() => {
+    const checkUser = () => {
+      const saved = localStorage.getItem('ht_user');
+      setLoggedInUser(saved ? JSON.parse(saved) : null);
+    };
+    checkUser();
+    window.addEventListener('storage', checkUser);
+    // Also poll every 2s for same-tab changes
+    const interval = setInterval(checkUser, 2000);
+    return () => { window.removeEventListener('storage', checkUser); clearInterval(interval); };
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -61,14 +76,83 @@ function Header({ onNavigate, onSelectCategory, selectedCategory, onSearch, sear
 
             {/* Right: Account & Subscribe */}
             <div className="flex items-center gap-2 md:gap-4">
-              <button onClick={() => onNavigate && onNavigate('dashboard')} className="flex items-center gap-1 md:gap-1.5 text-on-surface hover:text-primary transition-all font-bold text-xs md:text-sm">
-                <span className="material-symbols-outlined text-xl md:text-xl">person</span>
-                <span className="hidden sm:inline">My account</span>
-              </button>
+              {loggedInUser ? (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowProfileDrop(!showProfileDrop)}
+                    className="flex items-center gap-2 text-on-surface hover:text-primary transition-all font-bold text-xs md:text-sm"
+                  >
+                    <div className={`w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center text-white font-black text-[10px] md:text-xs uppercase shrink-0 ${
+                      loggedInUser.role === 'admin' ? 'bg-indigo-600' : loggedInUser.role === 'reporter' ? 'bg-blue-600' : 'bg-emerald-600'
+                    }`}>
+                      {loggedInUser.username.substring(0, 2)}
+                    </div>
+                    <span className="hidden sm:inline truncate max-w-[100px]">{loggedInUser.username}</span>
+                    <span className="material-symbols-outlined text-sm">expand_more</span>
+                  </button>
 
-              <button className="bg-primary text-white font-bold text-[9px] md:text-xs uppercase px-3 md:px-6 py-2 md:py-2.5 rounded tracking-wider shadow-sm hover:shadow-md transition-all">
-                SUBSCRIBE
-              </button>
+                  {/* Dropdown */}
+                  {showProfileDrop && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setShowProfileDrop(false)}></div>
+                      <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 overflow-hidden">
+                        <div className="p-4 border-b border-slate-100 bg-slate-50/50">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-white font-black text-xs uppercase shrink-0 ${
+                              loggedInUser.role === 'admin' ? 'bg-indigo-600' : loggedInUser.role === 'reporter' ? 'bg-blue-600' : 'bg-emerald-600'
+                            }`}>
+                              {loggedInUser.username.substring(0, 2)}
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="font-bold text-sm text-slate-800 truncate">{loggedInUser.username}</h4>
+                              <span className={`text-[10px] font-bold uppercase tracking-wider ${
+                                loggedInUser.role === 'admin' ? 'text-indigo-600' : loggedInUser.role === 'reporter' ? 'text-blue-600' : 'text-emerald-600'
+                              }`}>{loggedInUser.role}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="py-1">
+                          <button
+                            onClick={() => {
+                              setShowProfileDrop(false);
+                              if (loggedInUser.role === 'admin') window.location.href = '/maalik-access';
+                              else if (loggedInUser.role === 'reporter') window.location.href = '/reporter/login';
+                              else window.location.href = '/dashboard';
+                            }}
+                            className="w-full px-4 py-2.5 flex items-center gap-3 text-xs font-medium text-slate-700 hover:bg-slate-50 transition-colors text-left"
+                          >
+                            <span className="material-symbols-outlined text-base text-slate-500">dashboard</span>
+                            My Dashboard
+                          </button>
+                          <button
+                            onClick={() => {
+                              setShowProfileDrop(false);
+                              localStorage.removeItem('ht_user');
+                              setLoggedInUser(null);
+                              window.location.href = '/';
+                            }}
+                            className="w-full px-4 py-2.5 flex items-center gap-3 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors text-left"
+                          >
+                            <span className="material-symbols-outlined text-base">logout</span>
+                            Sign Out
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <button onClick={() => onNavigate && onNavigate('dashboard')} className="flex items-center gap-1 md:gap-1.5 text-on-surface hover:text-primary transition-all font-bold text-xs md:text-sm">
+                    <span className="material-symbols-outlined text-xl md:text-xl">person</span>
+                    <span className="hidden sm:inline">My account</span>
+                  </button>
+                  <button onClick={() => onNavigate && onNavigate('dashboard')} className="bg-primary text-white font-bold text-[9px] md:text-xs uppercase px-3 md:px-6 py-2 md:py-2.5 rounded tracking-wider shadow-sm hover:shadow-md transition-all">
+                    SUBSCRIBE
+                  </button>
+                </>
+              )}
+
             </div>
 
           </div>
@@ -203,9 +287,6 @@ function Header({ onNavigate, onSelectCategory, selectedCategory, onSearch, sear
           </nav>
 
           <div className="border-t border-outline-variant/20 pt-5 mt-auto flex flex-col gap-3">
-            <button className="w-full py-3 bg-secondary text-on-secondary rounded-xl font-label-caps text-xs shadow-lg hover:brightness-110 transition-all font-bold">
-              Subscribe Premium
-            </button>
             <div className="flex flex-col gap-2 px-2">
               <a className="text-on-surface-variant hover:text-on-surface text-xs flex items-center gap-2" href="#">
                 <span className="material-symbols-outlined text-base">settings</span> Settings

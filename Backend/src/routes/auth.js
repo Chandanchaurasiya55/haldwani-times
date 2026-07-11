@@ -9,28 +9,107 @@ function hashPassword(password) {
   return crypto.createHash('sha256').update(password).digest('hex');
 }
 
-// Helper to check for username/email duplication across all tables
-function checkDuplication(username, email, callback) {
-  // Check in admins
-  db.query('SELECT * FROM admins WHERE username = ? OR email = ?', [username, email], (err, adminRows) => {
-    if (err) return callback(err, null);
-    if (adminRows && adminRows.length > 0) return callback(null, 'admin');
+// ========================================
+// AUTO-CREATE TABLES ON STARTUP
+// ========================================
 
-    // Check in reporters
-    db.query('SELECT * FROM reporters WHERE username = ? OR email = ?', [username, email], (repErr, reporterRows) => {
-      if (repErr) return callback(repErr, null);
-      if (reporterRows && reporterRows.length > 0) return callback(null, 'reporter');
+// Admins table
+db.query(`CREATE TABLE IF NOT EXISTS admins (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(255) UNIQUE NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB`, [], (err) => {
+  if (err) console.error('[AuthInit] Failed to create admins table:', err.message);
+});
 
-      // Check in general users
-      db.query('SELECT * FROM users WHERE username = ? OR email = ?', [username, email], (userErr, userRows) => {
-        if (userErr) return callback(userErr, null);
-        if (userRows && userRows.length > 0) return callback(null, 'user');
-        
-        callback(null, false); // No duplication
-      });
-    });
+// Reporters table
+db.query(`CREATE TABLE IF NOT EXISTS reporters (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(255) UNIQUE NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  status VARCHAR(50) NOT NULL DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB`, [], (err) => {
+  if (err) console.error('[AuthInit] Failed to create reporters table:', err.message);
+});
+
+// Users table
+db.query(`CREATE TABLE IF NOT EXISTS users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(255) UNIQUE NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  status VARCHAR(50) NOT NULL DEFAULT 'active',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB`, [], (err) => {
+  if (err) console.error('[AuthInit] Failed to create users table:', err.message);
+});
+
+// Bookmarks table
+db.query(`CREATE TABLE IF NOT EXISTS bookmarks (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  article_id INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_bookmark (user_id, article_id)
+) ENGINE=InnoDB`, [], (err) => {
+  if (err) console.error('[AuthInit] Failed to create bookmarks table:', err.message);
+});
+
+
+// Helper to check for username/email duplication in a specific table
+function checkTableDuplication(table, username, email, callback) {
+  db.query(`SELECT * FROM ${table} WHERE username = ? OR email = ?`, [username, email], (err, rows) => {
+    if (err && err.code !== 'ER_NO_SUCH_TABLE') return callback(err, null);
+    if (rows && rows.length > 0) return callback(null, true);
+    callback(null, false);
   });
 }
+
+// @route   POST /api/auth/register/admin
+// @desc    Register a new admin account
+router.post('/register/admin', (req, res) => {
+  const { username, email, password } = req.body;
+
+  if (!username || !email || !password) {
+    return res.status(400).json({ message: 'All fields are required.' });
+  }
+
+  const hashedPassword = hashPassword(password);
+
+  checkTableDuplication('admins', username, email, (err, exists) => {
+    if (err) {
+      return res.status(500).json({ message: 'Database query failure.', error: err.message });
+    }
+    if (exists) {
+      return res.status(400).json({ message: 'Username or email already exists in Admins.' });
+    }
+
+    db.query(
+      'INSERT INTO admins (username, email, password) VALUES (?, ?, ?)',
+      [username, email, hashedPassword],
+      (insertErr, result) => {
+        if (insertErr) {
+          return res.status(500).json({ message: 'Registration failed.', error: insertErr.message });
+        }
+
+        res.status(201).json({
+          user: {
+            id: result.insertId,
+            username,
+            email,
+            role: 'admin',
+            status: 'active'
+          },
+          message: 'Admin account successfully created!'
+        });
+      }
+    );
+  });
+});
 
 // @route   POST /api/auth/register/reporter
 // @desc    Register a new reporter account
@@ -43,12 +122,12 @@ router.post('/register/reporter', (req, res) => {
 
   const hashedPassword = hashPassword(password);
 
-  checkDuplication(username, email, (err, conflictRole) => {
+  checkTableDuplication('reporters', username, email, (err, exists) => {
     if (err) {
       return res.status(500).json({ message: 'Database query failure.', error: err.message });
     }
-    if (conflictRole) {
-      return res.status(400).json({ message: 'Username or email already exists.' });
+    if (exists) {
+      return res.status(400).json({ message: 'Username or email already exists in Reporters.' });
     }
 
     // Insert new reporter
@@ -86,12 +165,12 @@ router.post('/register/user', (req, res) => {
 
   const hashedPassword = hashPassword(password);
 
-  checkDuplication(username, email, (err, conflictRole) => {
+  checkTableDuplication('users', username, email, (err, exists) => {
     if (err) {
       return res.status(500).json({ message: 'Database query failure.', error: err.message });
     }
-    if (conflictRole) {
-      return res.status(400).json({ message: 'Username or email already exists.' });
+    if (exists) {
+      return res.status(400).json({ message: 'Username or email already exists in Readers.' });
     }
 
     // Insert new general user
@@ -131,7 +210,7 @@ router.post('/login', (req, res) => {
 
   // 1. Try matching against admins
   db.query('SELECT * FROM admins WHERE email = ?', [email], (err, adminRows) => {
-    if (err) {
+    if (err && err.code !== 'ER_NO_SUCH_TABLE') {
       return res.status(500).json({ message: 'Database query failure.', error: err.message });
     }
 
@@ -154,7 +233,7 @@ router.post('/login', (req, res) => {
 
     // 2. Try matching against reporters
     db.query('SELECT * FROM reporters WHERE email = ?', [email], (repErr, reporterRows) => {
-      if (repErr) {
+      if (repErr && repErr.code !== 'ER_NO_SUCH_TABLE') {
         return res.status(500).json({ message: 'Database query failure.', error: repErr.message });
       }
 
@@ -180,7 +259,7 @@ router.post('/login', (req, res) => {
 
       // 3. Try matching against general users (Readers)
       db.query('SELECT * FROM users WHERE email = ?', [email], (userErr, userRows) => {
-        if (userErr) {
+        if (userErr && userErr.code !== 'ER_NO_SUCH_TABLE') {
           return res.status(500).json({ message: 'Database query failure.', error: userErr.message });
         }
 

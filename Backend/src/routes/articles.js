@@ -9,6 +9,8 @@ db.query(
     slot_id VARCHAR(50) PRIMARY KEY,
     image_url TEXT,
     target_url TEXT,
+    title VARCHAR(255) DEFAULT NULL,
+    description TEXT DEFAULT NULL,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
   ) ENGINE=InnoDB`,
   [],
@@ -16,11 +18,42 @@ db.query(
     if (err) {
       console.error('[AdsInit] Failed to verify/create ads table:', err.message);
     } else {
-      const slots = ['AD 1', 'AD 2', 'AD 3', 'AD 4', 'AD 5', 'AD 6', 'AD 7'];
-      slots.forEach(slot => {
+      // Dynamic migration for existing DB
+      db.query("SHOW COLUMNS FROM ads LIKE 'title'", (colErr, rows) => {
+        if (!colErr && rows.length === 0) {
+          db.query("ALTER TABLE ads ADD COLUMN title VARCHAR(255) DEFAULT NULL, ADD COLUMN description TEXT DEFAULT NULL", (alterErr) => {
+            if (alterErr) console.error("[AdsMigration] Failed to add title/description columns:", alterErr.message);
+            else console.log("[AdsMigration] Successfully added title/description columns to ads table.");
+          });
+        }
+      });
+
+      const slots = [
+        { slot: 'AD 1' }, { slot: 'AD 2' }, { slot: 'AD 3' }, { slot: 'AD 4' }, { slot: 'AD 5' }, { slot: 'AD 6' }, { slot: 'AD 7' },
+        {
+          slot: 'SLIDER 1',
+          url: 'https://images.unsplash.com/photo-1540553016722-983e48a2cd10?auto=format&fit=crop&w=1200&h=300&q=80',
+          title: 'Kumaon Luxury Retreats',
+          desc: 'Experience pure tranquility in the lap of nature. Book your premium cottage stay today.'
+        },
+        {
+          slot: 'SLIDER 2',
+          url: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1200&h=300&q=80',
+          title: 'Haldwani Premium Residency',
+          desc: 'Delivering dream homes at unbeatable rates. RERA-approved luxury villas open for booking.'
+        },
+        {
+          slot: 'SLIDER 3',
+          url: 'https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=1200&h=300&q=80',
+          title: 'Nainital Adventure Club',
+          desc: 'Unleash the thrill with paragliding, boating, and trekking campaigns. Group discounts active.'
+        }
+      ];
+
+      slots.forEach(item => {
         db.query(
-          `INSERT IGNORE INTO ads (slot_id, image_url, target_url) VALUES (?, '', '')`,
-          [slot]
+          `INSERT IGNORE INTO ads (slot_id, image_url, target_url, title, description) VALUES (?, ?, '', ?, ?)`,
+          [item.slot, item.url || '', item.title || null, item.desc || null]
         );
       });
     }
@@ -302,15 +335,15 @@ router.get('/ads', (req, res) => {
 // @route   PUT /api/articles/ads
 // @desc    Update a specific ad slot (admin-only)
 router.put('/ads', (req, res) => {
-  const { slot_id, image_url, target_url } = req.body;
+  const { slot_id, image_url, target_url, title, description } = req.body;
 
   if (!slot_id) {
     return res.status(400).json({ message: 'Slot ID is required.' });
   }
 
   db.query(
-    'UPDATE ads SET image_url = ?, target_url = ? WHERE slot_id = ?',
-    [image_url || '', target_url || '', slot_id],
+    'UPDATE ads SET image_url = ?, target_url = ?, title = ?, description = ? WHERE slot_id = ?',
+    [image_url || '', target_url || '', title || null, description || null, slot_id],
     (err, result) => {
       if (err) {
         return res.status(500).json({ message: 'Failed to update ad.', error: err.message });

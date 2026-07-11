@@ -86,14 +86,14 @@ const AdPlaceholder = ({ id, size, type, description, className = "", adObject }
           href={targetUrl || "#"} 
           target={targetUrl ? "_blank" : undefined} 
           rel="noopener noreferrer"
-          className="w-full relative overflow-hidden rounded-2xl border border-slate-100 flex items-center justify-center bg-slate-50 shadow-sm transition-all hover:opacity-95"
+          className="w-full relative overflow-hidden rounded-none border border-slate-100 flex items-center justify-center bg-slate-50 shadow-sm transition-all hover:opacity-95"
           style={
             isSidebar 
-              ? { maxWidth: '300px', height: size.includes('300x600') ? '600px' : '250px' } 
-              : { maxWidth: '728px', height: '90px' }
+              ? { maxWidth: '100%', height: size.includes('300x600') ? '650px' : '320px' } 
+              : { maxWidth: '100%', height: '160px' }
           }
         >
-          <img src={imageUrl} alt="Advertisement" className="w-full h-full object-cover" />
+          <img src={imageUrl} alt="Advertisement" className="max-w-full max-h-full object-contain" />
           <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-sm text-[8px] text-white font-black px-1.5 py-0.5 rounded tracking-wide uppercase">Ad</span>
         </a>
       </div>
@@ -103,13 +103,13 @@ const AdPlaceholder = ({ id, size, type, description, className = "", adObject }
   return (
     <div className={`w-full flex justify-center py-2 select-none ${className}`}>
       <div 
-        className={`w-full bg-[#f8fafc] border border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center p-3 relative shadow-sm text-center ${
-          isSidebar ? 'min-h-[250px]' : 'min-h-[90px]'
+        className={`w-full bg-[#f8fafc] border border-dashed border-slate-200 rounded-none flex flex-col items-center justify-center p-3 relative shadow-sm text-center ${
+          isSidebar ? 'min-h-[320px]' : 'min-h-[160px]'
         }`}
         style={
           isSidebar 
-            ? { maxWidth: '300px', height: size.includes('300x600') ? '600px' : '250px' } 
-            : { maxWidth: '728px', height: '90px' }
+            ? { maxWidth: '100%', height: size.includes('300x600') ? '650px' : '320px' } 
+            : { maxWidth: '100%', height: '160px' }
         }
       >
         <span className="bg-[#b80035] text-white text-[8px] md:text-[9px] font-black px-2 py-0.5 rounded-full absolute -top-2 left-6 uppercase tracking-widest shadow-sm">
@@ -133,6 +133,35 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
   // Dynamic Ads State from DB
   const [dbAds, setDbAds] = useState([]);
   const getAdBySlot = (slotId) => dbAds.find(ad => ad.slot_id === slotId);
+
+  const sliderAds = useMemo(() => {
+    const s1 = getAdBySlot('SLIDER 1');
+    const s2 = getAdBySlot('SLIDER 2');
+    const s3 = getAdBySlot('SLIDER 3');
+    return [
+      {
+        id: 1,
+        image: s1?.image_url || 'https://images.unsplash.com/photo-1540553016722-983e48a2cd10?auto=format&fit=crop&w=1200&h=300&q=80',
+        title: s1?.title || 'Kumaon Luxury Retreats',
+        desc: s1?.description || 'Experience pure tranquility in the lap of nature. Book your premium cottage stay today.',
+        target: s1?.target_url
+      },
+      {
+        id: 2,
+        image: s2?.image_url || 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1200&h=300&q=80',
+        title: s2?.title || 'Haldwani Premium Residency',
+        desc: s2?.description || 'Delivering dream homes at unbeatable rates. RERA-approved luxury villas open for booking.',
+        target: s2?.target_url
+      },
+      {
+        id: 3,
+        image: s3?.image_url || 'https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=1200&h=300&q=80',
+        title: s3?.title || 'Nainital Adventure Club',
+        desc: s3?.description || 'Unleash the thrill with paragliding, boating, and trekking campaigns. Group discounts active.',
+        target: s3?.target_url
+      }
+    ];
+  }, [dbAds]);
   
   // Lazy loading pagination count
   const [visibleCount, setVisibleCount] = useState(12);
@@ -198,10 +227,10 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
   // Auto scroll ads every 3 seconds
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentAdIndex((prevIndex) => (prevIndex + 1) % ads.length);
+      setCurrentAdIndex((prevIndex) => (prevIndex + 1) % sliderAds.length);
     }, 3000);
     return () => clearInterval(timer);
-  }, []);
+  }, [sliderAds.length]);
 
   // Reset activeTab and pagination on selectedCategory change
   useEffect(() => {
@@ -670,23 +699,34 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
 
       {/* Full Width Advertisement Banner Slider */}
       <section className="w-full max-w-[1440px] mx-auto px-4 md:px-12 select-none">
-        <div className="relative w-full h-[140px] sm:h-[180px] md:h-[220px] rounded-2xl md:rounded-3xl overflow-hidden shadow-sm group">
+        <div className="relative w-full h-[140px] sm:h-[180px] md:h-[220px] rounded-none overflow-hidden shadow-sm group">
           <div className="absolute inset-0 w-full h-full flex transition-transform duration-700 ease-in-out"
                style={{ transform: `translateX(-${currentAdIndex * 100}%)` }}>
-            {ads.map((ad) => (
-              <div key={ad.id} className="relative w-full h-full shrink-0">
-                <img className="w-full h-full object-cover" src={ad.image} alt={ad.title} />
-                <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/40 to-transparent"></div>
-                <div className="absolute inset-y-0 left-0 flex flex-col justify-center px-5 sm:px-8 md:px-16 text-white max-w-[90%] md:max-w-[55%]">
-                  <span className="bg-primary/95 text-[9px] text-white font-normal uppercase tracking-widest px-2 py-0.5 rounded w-max mb-2 shadow-sm">Sponsored Ad</span>
-                  <h3 className="text-base sm:text-xl md:text-2xl font-normal tracking-tight leading-tight mb-1">{ad.title}</h3>
-                  <p className="hidden sm:block text-xs md:text-sm text-slate-200/90 leading-relaxed font-normal">{ad.desc}</p>
+            {sliderAds.map((ad) => {
+              const slideContent = (
+                <div className="relative w-full h-full shrink-0">
+                  <img className="w-full h-full object-cover" src={ad.image} alt={ad.title} />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/40 to-transparent"></div>
+                  <div className="absolute inset-y-0 left-0 flex flex-col justify-center px-5 sm:px-8 md:px-16 text-white max-w-[90%] md:max-w-[55%]">
+                    <span className="bg-primary/95 text-[9px] text-white font-normal uppercase tracking-widest px-2 py-0.5 rounded w-max mb-2 shadow-sm">Sponsored Ad</span>
+                    <h3 className="text-base sm:text-xl md:text-2xl font-normal tracking-tight leading-tight mb-1">{ad.title}</h3>
+                    <p className="hidden sm:block text-xs md:text-sm text-slate-200/90 leading-relaxed font-normal">{ad.desc}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+              return ad.target ? (
+                <a key={ad.id} href={ad.target} target="_blank" rel="noopener noreferrer" className="w-full h-full shrink-0 block">
+                  {slideContent}
+                </a>
+              ) : (
+                <div key={ad.id} className="w-full h-full shrink-0 block">
+                  {slideContent}
+                </div>
+              );
+            })}
           </div>
           <div className="absolute bottom-3 right-4 flex gap-1.5">
-            {ads.map((_, idx) => (
+            {sliderAds.map((_, idx) => (
               <button key={idx} onClick={() => setCurrentAdIndex(idx)}
                 className={`h-1.5 rounded-full transition-all duration-300 ${currentAdIndex === idx ? 'bg-primary w-5' : 'w-1.5 bg-white/60 hover:bg-white'}`}
                 aria-label={`Go to slide ${idx + 1}`} />

@@ -1,6 +1,64 @@
 import React, { useState, useEffect } from 'react';
 import { parseLiveTitle } from '../utils/liveUtils';
 
+const API_BASE_URL = 'http://localhost:5000/api';
+
+const DetailAdPlaceholder = ({ slotId, size, type, description, className = "", adsList }) => {
+  const ad = adsList?.find(a => a.slot_id === slotId);
+  const imageUrl = ad?.image_url;
+  const targetUrl = ad?.target_url;
+
+  if (imageUrl) {
+    return (
+      <div className={`w-full flex justify-center py-2 select-none ${className}`}>
+        <a 
+          href={targetUrl || "#"} 
+          target={targetUrl ? "_blank" : undefined} 
+          rel="noopener noreferrer"
+          className="w-full relative overflow-hidden rounded-none border border-slate-100 flex items-center justify-center bg-slate-50 shadow-sm transition-all hover:opacity-95"
+          style={{ maxWidth: '100%', height: '140px' }}
+        >
+          <img src={imageUrl} alt="Advertisement" className="max-w-full max-h-full object-contain" />
+          <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-sm text-[8px] text-white font-black px-1.5 py-0.5 rounded tracking-wide uppercase">Ad</span>
+        </a>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`w-full flex justify-center py-2 select-none ${className}`}>
+      <div 
+        className="w-full bg-[#f8fafc] border border-dashed border-slate-200 rounded-none flex flex-col items-center justify-center p-3 relative shadow-sm text-center"
+        style={{ maxWidth: '100%', height: '140px' }}
+      >
+        <span className="bg-[#b80035] text-white text-[8px] md:text-[9px] font-black px-2 py-0.5 rounded-full absolute -top-2 left-6 uppercase tracking-widest shadow-sm">
+          {slotId}
+        </span>
+        <h4 className="text-slate-800 font-extrabold text-[11px] md:text-xs tracking-tight">{size}</h4>
+        <span className="text-[9px] text-[#b80035]/80 font-bold uppercase tracking-wider">{type}</span>
+        <span className="text-[8px] text-slate-400 font-medium max-w-[90%] leading-normal">{description}</span>
+      </div>
+    </div>
+  );
+};
+
+const GoogleAdPlaceholder = ({ className = "" }) => {
+  return (
+    <div className={`w-full flex justify-center py-2 select-none ${className}`}>
+      <div className="w-full bg-slate-50/50 border border-slate-200/60 rounded-none flex flex-col items-center justify-center p-4 relative text-center min-h-[140px] overflow-hidden">
+        <span className="absolute top-2 right-2 text-[7px] font-black text-slate-300 uppercase tracking-widest">Sponsored</span>
+        <div className="flex flex-col items-center gap-1.5">
+          <div className="flex items-center gap-1">
+            <span className="material-symbols-outlined text-slate-300 text-sm">ads_click</span>
+            <span className="text-slate-400 font-bold text-[9px] uppercase tracking-widest">Google Adsense Space</span>
+          </div>
+          <span className="text-[8px] text-slate-300 font-medium max-w-[80%] leading-normal">Interactive targeted matching banner placement area</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 function ArticleDetail({ article: rawArticle, onClose, onSelectArticle, allArticles }) {
   const article = React.useMemo(() => {
     if (!rawArticle) return null;
@@ -30,6 +88,19 @@ function ArticleDetail({ article: rawArticle, onClose, onSelectArticle, allArtic
   const [hindiSummary, setHindiSummary] = useState('');
   const [hindiParagraphs, setHindiParagraphs] = useState([]);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [adsList, setAdsList] = useState([]);
+
+  useEffect(() => {
+    const fetchAds = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/articles/ads`);
+        if (res.ok) setAdsList(await res.json());
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    fetchAds();
+  }, []);
   const [comments, setComments] = useState([
     {
       id: 1,
@@ -363,7 +434,7 @@ function ArticleDetail({ article: rawArticle, onClose, onSelectArticle, allArtic
     <div className="w-full pt-[148px] pb-16 md:pb-24 bg-background font-body-md text-on-background selection:bg-primary-fixed selection:text-on-primary-fixed">
       
       {/* Navigation / Back Button */}
-      <div className="w-full px-4 md:px-12 mb-4 md:mb-6">
+      <div className="w-full px-4 md:px-12 mb-4 md:mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <button 
           onClick={onClose}
           className="flex items-center gap-2 text-on-surface hover:text-primary transition-all font-bold tracking-wider text-xs md:text-sm bg-white px-4 md:px-5 py-2 md:py-2.5 rounded-full shadow-sm hover:shadow border border-outline-variant/10 group cursor-pointer"
@@ -371,6 +442,11 @@ function ArticleDetail({ article: rawArticle, onClose, onSelectArticle, allArtic
           <span className="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
           <span>वापस जाएं</span>
         </button>
+      </div>
+
+      {/* AD 2: Below Header Ad */}
+      <div className="w-full max-w-[1440px] mx-auto px-4 md:px-12 mb-4">
+        <DetailAdPlaceholder slotId="AD 2" size="728x90 - Top Banner" type="BELOW HEADER AD" description="Premium placement below main navigation" adsList={adsList} />
       </div>
 
       {/* Hero Section */}
@@ -498,14 +574,24 @@ function ArticleDetail({ article: rawArticle, onClose, onSelectArticle, allArtic
                 {typeof enrichedParagraphs[0] === 'string' ? enrichedParagraphs[0] : enrichedParagraphs[0].text}
               </p>
               {enrichedParagraphs.slice(1).map((para, idx) => {
-                if (para && para.isQuote) {
-                  return (
-                    <blockquote key={idx} className="border-l-4 border-primary pl-8 my-12 py-4 italic font-headline-md text-headline-md text-on-surface bg-surface-container-low rounded-r-2xl">
-                      {para.text}
-                    </blockquote>
-                  );
-                }
-                return <p key={idx}>{para}</p>;
+                const renderPara = (p) => {
+                  if (p && p.isQuote) {
+                    return (
+                      <blockquote className="border-l-4 border-primary pl-8 my-12 py-4 italic font-headline-md text-headline-md text-on-surface bg-surface-container-low rounded-r-2xl">
+                        {p.text}
+                      </blockquote>
+                    );
+                  }
+                  return <p>{p}</p>;
+                };
+                return (
+                  <React.Fragment key={idx}>
+                    {idx === 2 && (
+                      <DetailAdPlaceholder slotId="AD 4" size="728x90 - Mid Article" type="IN-ARTICLE AD" description="Contextual inline banner placement" adsList={adsList} className="my-6" />
+                    )}
+                    {renderPara(para)}
+                  </React.Fragment>
+                );
               })}
             </article>
           )}
@@ -517,9 +603,12 @@ function ArticleDetail({ article: rawArticle, onClose, onSelectArticle, allArtic
             <span className="px-4 py-2 bg-surface-container-low rounded-full font-label-caps text-label-caps text-on-surface-variant border border-outline-variant/30 hover:bg-surface-container-high cursor-pointer transition-colors">#NEWS</span>
           </div>
 
+          {/* Google Adsense Space */}
+          <GoogleAdPlaceholder className="mt-8 border-t border-outline-variant/10 pt-8" />
+
           {/* Attribution Notice */}
           {article.sourceName && (
-            <div className="mt-10 p-5 bg-slate-50 rounded-2xl border border-slate-200/50 text-xs text-slate-500 flex items-center justify-between">
+            <div className="mt-8 p-5 bg-slate-50 rounded-2xl border border-slate-200/50 text-xs text-slate-500 flex items-center justify-between">
               <span className="italic">यह समाचार <strong>हल्द्वानी टाइम्स</strong> द्वारा <strong>{article.sourceName}</strong> से संकलित है। सभी कॉपीराइट संबंधित प्रकाशक के हैं।</span>
               {article.sourceUrl && (
                 <a href={article.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-primary font-bold hover:underline not-italic shrink-0 ml-4">प्रकाशक देखें &rarr;</a>
