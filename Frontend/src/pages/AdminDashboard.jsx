@@ -480,6 +480,24 @@ function AdminDashboard({ onRefreshArticles }) {
                     <label className="text-xs font-bold text-slate-600">Image URL</label>
                     <div className="flex gap-2">
                       <input type="url" required value={adImageUrl} onChange={(e) => setAdImageUrl(e.target.value)} placeholder="https://..." className="flex-1 px-3 py-2.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm" />
+                      <input type="file" id="admin-ad-upload" accept="image/*" className="hidden" onChange={async (e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        setErrorMsg(''); setSuccessMsg('Uploading image...');
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        try {
+                          const res = await fetch(`${API_BASE_URL}/media/upload`, { method: 'POST', body: formData });
+                          const data = await res.json();
+                          if (!res.ok) throw new Error(data.message || 'Upload failed.');
+                          setAdImageUrl(data.url);
+                          setSuccessMsg('Ad image uploaded successfully!');
+                        } catch (err) {
+                          setSuccessMsg('');
+                          setErrorMsg('Image upload failed: ' + err.message);
+                        }
+                      }} />
+                      <label htmlFor="admin-ad-upload" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase px-4 rounded-lg flex items-center justify-center cursor-pointer transition-colors shrink-0 select-none">Upload</label>
                       <button type="button" onClick={() => { setSelectorTarget('ad'); setIsSelectorOpen(true); }} className="bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 px-3 rounded-lg text-xs font-bold transition-colors shrink-0 flex items-center gap-1"><span className="material-symbols-outlined text-sm">perm_media</span>Gallery</button>
                     </div>
                   </div>
@@ -494,7 +512,7 @@ function AdminDashboard({ onRefreshArticles }) {
                   </div>
                   {adImageUrl ? (
                     <div className="rounded-lg overflow-hidden border border-slate-100 relative flex flex-col justify-end" style={{height: selectedAdSlot.startsWith('SLIDER') ? '130px' : selectedAdSlot === 'AD 5' ? '200px' : selectedAdSlot === 'AD 3' ? '150px' : '70px'}}>
-                      <img src={adImageUrl} alt="Preview" className="w-full h-full object-cover" />
+                      <img src={adImageUrl} alt="Preview" className="w-full h-full object-contain" />
                       {selectedAdSlot.startsWith('SLIDER') && (
                         <div className="absolute inset-0 bg-black/60 p-4 flex flex-col justify-end text-white text-left">
                           <h5 className="font-bold text-xs truncate">{adTitle || 'Slide Title'}</h5>
@@ -518,6 +536,24 @@ function AdminDashboard({ onRefreshArticles }) {
                   <label className="text-xs font-bold text-slate-600">Cover Image URL</label>
                   <div className="flex gap-2">
                     <input type="url" value={blogImageUrl} onChange={(e) => setBlogImageUrl(e.target.value)} placeholder="https://images.unsplash.com/..." className="flex-1 px-3 py-2.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm" />
+                    <input type="file" id="admin-blog-upload" accept="image/*" className="hidden" onChange={async (e) => {
+                      const file = e.target.files[0];
+                      if (!file) return;
+                      setErrorMsg(''); setSuccessMsg('Uploading image...');
+                      const formData = new FormData();
+                      formData.append('file', file);
+                      try {
+                        const res = await fetch(`${API_BASE_URL}/media/upload`, { method: 'POST', body: formData });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.message || 'Upload failed.');
+                        setBlogImageUrl(data.url);
+                        setSuccessMsg('Blog cover image uploaded successfully!');
+                      } catch (err) {
+                        setSuccessMsg('');
+                        setErrorMsg('Image upload failed: ' + err.message);
+                      }
+                    }} />
+                    <label htmlFor="admin-blog-upload" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase px-4 rounded-lg flex items-center justify-center cursor-pointer transition-colors shrink-0 select-none">Upload</label>
                     <button type="button" onClick={() => { setSelectorTarget('blog'); setIsSelectorOpen(true); }} className="bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 px-3 rounded-lg text-xs font-bold transition-colors shrink-0 flex items-center gap-1"><span className="material-symbols-outlined text-sm">perm_media</span>Gallery</button>
                   </div>
                 </div>

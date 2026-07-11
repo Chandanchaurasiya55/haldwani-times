@@ -64,13 +64,8 @@ function Header({ onNavigate, onSelectCategory, selectedCategory, onSearch, sear
 
             {/* Center: Logo */}
             <div className="flex items-center justify-center absolute left-1/2 -translate-x-1/2 z-10 pointer-events-auto">
-              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate && onNavigate('home'); }} className="hover:text-primary transition-all text-center flex flex-col items-center select-none">
-                <span className="font-serif font-black text-xl sm:text-2xl md:text-3xl tracking-tight text-on-surface leading-none italic whitespace-nowrap">
-                  Haldwani Times
-                </span>
-                <span className="hidden sm:block text-[7px] md:text-[9px] font-sans tracking-[0.2em] md:tracking-[0.25em] text-on-surface-variant font-semibold mt-1">
-                  PREMIUM EDITORIAL AGGREGATOR
-                </span>
+              <a href="#" onClick={(e) => { e.preventDefault(); onNavigate && onNavigate('home'); }} className="hover:opacity-90 transition-all text-center flex flex-col items-center select-none">
+                <img src="/logo.png" alt="Haldwani Times Logo" className="h-10 sm:h-12 md:h-14 w-auto object-contain" />
               </a>
             </div>
 
@@ -166,9 +161,9 @@ function Header({ onNavigate, onSelectCategory, selectedCategory, onSearch, sear
             <a
               href="#"
               onClick={(e) => { e.preventDefault(); onNavigate && onNavigate('home'); }}
-              className={`font-serif font-black text-lg text-on-surface leading-none italic whitespace-nowrap transition-all duration-300 select-none shrink-0 ${isScrolled ? 'opacity-100 w-auto mr-6' : 'opacity-0 w-0 overflow-hidden pointer-events-none'}`}
+              className={`transition-all duration-300 select-none shrink-0 ${isScrolled ? 'opacity-100 w-auto mr-6' : 'opacity-0 w-0 overflow-hidden pointer-events-none'}`}
             >
-              Haldwani Times
+              <img src="/logo.png" alt="Haldwani Times Logo" className="h-7 w-auto object-contain" />
             </a>
 
             {/* Scrollable nav */}

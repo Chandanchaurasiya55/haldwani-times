@@ -31,22 +31,33 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
+// Clean and parse Cloudinary variables
+let cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+if (cloudName && cloudName.startsWith('cloudinary://')) {
+  const parts = cloudName.split('@');
+  if (parts.length > 1) {
+    cloudName = parts[parts.length - 1];
+  }
+}
+
 // Check Cloudinary credentials
 const hasCloudinary = process.env.CLOUDINARY_URL || 
-                      (process.env.CLOUDINARY_CLOUD_NAME && 
+                      (cloudName && 
                        process.env.CLOUDINARY_API_KEY && 
                        process.env.CLOUDINARY_API_SECRET);
 
 if (hasCloudinary) {
   console.log('[Media] Cloudinary credentials found. Using Cloudinary storage.');
   if (process.env.CLOUDINARY_URL) {
-    // Cloudinary automatically picks up process.env.CLOUDINARY_URL if we call config
-    cloudinary.config(true); 
+    cloudinary.config({
+      secure: true
+    });
   } else {
     cloudinary.config({
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      cloud_name: cloudName,
       api_key: process.env.CLOUDINARY_API_KEY,
-      api_secret: process.env.CLOUDINARY_API_SECRET
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+      secure: true
     });
   }
 } else {
@@ -80,23 +91,33 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     let cloudinaryId = null;
 
     if (hasCloudinary) {
-      // Cloudinary stream upload
-      const uploadStream = () => {
-        return new Promise((resolve, reject) => {
-          const stream = cloudinary.uploader.upload_stream(
-            { folder: 'haldwani_times' },
-            (error, result) => {
-              if (error) return reject(error);
-              resolve(result);
-            }
-          );
-          stream.end(req.file.buffer);
-        });
-      };
+      try {
+        // Cloudinary stream upload
+        const uploadStream = () => {
+          return new Promise((resolve, reject) => {
+            const stream = cloudinary.uploader.upload_stream(
+              { folder: 'haldwani_times' },
+              (error, result) => {
+                if (error) return reject(error);
+                resolve(result);
+              }
+            );
+            stream.end(req.file.buffer);
+          });
+        };
 
-      const result = await uploadStream();
-      url = result.secure_url;
-      cloudinaryId = result.public_id;
+        const result = await uploadStream();
+        url = result.secure_url;
+        cloudinaryId = result.public_id;
+      } catch (cloudErr) {
+        console.warn('[CloudinaryUploadError] Cloudinary failed, falling back to local file storage:', cloudErr.message);
+        // Fallback to local storage manually by writing buffer
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const filename = uniqueSuffix + path.extname(req.file.originalname);
+        const filePath = path.join(uploadsDir, filename);
+        fs.writeFileSync(filePath, req.file.buffer);
+        url = `http://localhost:5000/uploads/${filename}`;
+      }
     } else {
       // Local URL fallback
       const filename = req.file.filename;

@@ -322,7 +322,7 @@ function UserDashboard({ onRefreshArticles }) {
                   {bidAdImageUrl && (
                     <div className="bg-white border border-slate-200 rounded-lg p-4">
                       <h4 className="text-[10px] font-bold text-slate-500 uppercase mb-2">Banner Preview</h4>
-                      <div className="rounded-lg overflow-hidden border border-slate-100"><img src={bidAdImageUrl} alt="Preview" className="w-full h-auto object-cover" /></div>
+                      <div className="rounded-lg overflow-hidden border border-slate-100 flex items-center justify-center bg-slate-50 min-h-[100px]"><img src={bidAdImageUrl} alt="Preview" className="max-w-full max-h-[200px] object-contain" /></div>
                     </div>
                   )}
                 </div>
@@ -368,7 +368,7 @@ function UserDashboard({ onRefreshArticles }) {
                 ) : adsList.filter(ad => ad.image_url).map((ad) => (
                   <div key={ad.slot_id} className="bg-white border border-slate-200 rounded-lg overflow-hidden flex flex-col">
                     <div className="h-32 bg-slate-100 overflow-hidden relative border-b border-slate-100">
-                      <img src={ad.image_url} alt="Campaign" className="w-full h-full object-cover" />
+                      <img src={ad.image_url} alt="Campaign" className="w-full h-full object-contain" />
                       <span className="absolute bottom-2 left-2 bg-black/65 text-white font-bold text-[8px] px-2 py-0.5 rounded uppercase tracking-wider">SPONSORED</span>
                     </div>
                     <div className="p-4 flex items-center justify-between">

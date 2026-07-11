@@ -10,18 +10,17 @@ const DetailAdPlaceholder = ({ slotId, size, type, description, className = "", 
 
   if (imageUrl) {
     return (
-      <div className={`w-full flex justify-center py-2 select-none ${className}`}>
-        <a 
-          href={targetUrl || "#"} 
-          target={targetUrl ? "_blank" : undefined} 
-          rel="noopener noreferrer"
-          className="w-full relative overflow-hidden rounded-none border border-slate-100 flex items-center justify-center bg-slate-50 shadow-sm transition-all hover:opacity-95"
-          style={{ maxWidth: '100%', height: '140px' }}
-        >
-          <img src={imageUrl} alt="Advertisement" className="w-full h-full object-cover" />
-          <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-sm text-[8px] text-white font-black px-1.5 py-0.5 rounded tracking-wide uppercase">Ad</span>
-        </a>
-      </div>
+      <a 
+        href={targetUrl || "#"} 
+        target={targetUrl ? "_blank" : undefined} 
+        rel="noopener noreferrer"
+        className={`block w-full select-none hover:opacity-95 ${className}`}
+      >
+        <div className="relative w-full overflow-hidden">
+          <img src={imageUrl} alt="Advertisement" className="w-full h-auto block" />
+          <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-sm text-[8px] text-white font-black px-1.5 py-0.5 rounded tracking-wide uppercase select-none">Ad</span>
+        </div>
+      </a>
     );
   }
 
@@ -29,7 +28,7 @@ const DetailAdPlaceholder = ({ slotId, size, type, description, className = "", 
     <div className={`w-full flex justify-center py-2 select-none ${className}`}>
       <div 
         className="w-full bg-[#f8fafc] border border-dashed border-slate-200 rounded-none flex flex-col items-center justify-center p-3 relative shadow-sm text-center"
-        style={{ maxWidth: '100%', height: '140px' }}
+        style={{ maxWidth: '100%', height: '160px' }}
       >
         <span className="bg-[#b80035] text-white text-[8px] md:text-[9px] font-black px-2 py-0.5 rounded-full absolute -top-2 left-6 uppercase tracking-widest shadow-sm">
           {slotId}
@@ -45,7 +44,7 @@ const DetailAdPlaceholder = ({ slotId, size, type, description, className = "", 
 const GoogleAdPlaceholder = ({ className = "" }) => {
   return (
     <div className={`w-full flex justify-center py-2 select-none ${className}`}>
-      <div className="w-full bg-slate-50/50 border border-slate-200/60 rounded-none flex flex-col items-center justify-center p-4 relative text-center min-h-[140px] overflow-hidden">
+      <div className="w-full bg-slate-50/50 border border-slate-200/60 rounded-none flex flex-col items-center justify-center p-4 relative text-center min-h-[160px] overflow-hidden">
         <span className="absolute top-2 right-2 text-[7px] font-black text-slate-300 uppercase tracking-widest">Sponsored</span>
         <div className="flex flex-col items-center gap-1.5">
           <div className="flex items-center gap-1">
@@ -446,7 +445,7 @@ function ArticleDetail({ article: rawArticle, onClose, onSelectArticle, allArtic
 
       {/* AD 2: Below Header Ad */}
       <div className="w-full max-w-[1440px] mx-auto px-4 md:px-12 mb-4">
-        <DetailAdPlaceholder slotId="AD 2" size="728x90 - Top Banner" type="BELOW HEADER AD" description="Premium placement below main navigation" adsList={adsList} />
+        <DetailAdPlaceholder slotId="AD 2" size="1200x160 - Top Banner" type="BELOW HEADER AD" description="Premium placement below main navigation" adsList={adsList} />
       </div>
 
       {/* Hero Section */}
@@ -587,7 +586,7 @@ function ArticleDetail({ article: rawArticle, onClose, onSelectArticle, allArtic
                 return (
                   <React.Fragment key={idx}>
                     {idx === 2 && (
-                      <DetailAdPlaceholder slotId="AD 4" size="728x90 - Mid Article" type="IN-ARTICLE AD" description="Contextual inline banner placement" adsList={adsList} className="my-6" />
+                      <DetailAdPlaceholder slotId="AD 4" size="1200x160 - Mid Article" type="IN-ARTICLE AD" description="Contextual inline banner placement" adsList={adsList} className="my-6" />
                     )}
                     {renderPara(para)}
                   </React.Fragment>

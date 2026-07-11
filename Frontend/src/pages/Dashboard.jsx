@@ -1133,7 +1133,7 @@ function Dashboard({ onClose, onRefreshArticles }) {
                                    style={{ 
                                      height: selectedAdSlot === 'AD 3' ? '180px' : selectedAdSlot === 'AD 5' ? '320px' : '90px' 
                                    }}>
-                                <img src={adImageUrl} alt="Ad Preview" className="w-full h-full object-cover" />
+                                <img src={adImageUrl} alt="Ad Preview" className="w-full h-full object-contain" />
                                 <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-sm text-[8px] text-white font-black px-1.5 py-0.5 rounded tracking-wide uppercase">Preview</span>
                               </div>
                             ) : (
@@ -1698,7 +1698,7 @@ function Dashboard({ onClose, onRefreshArticles }) {
                           {adsList.filter(a => a.image_url).map((ad) => (
                             <div key={ad.id} className="bg-white border border-slate-100 rounded-2xl shadow-[0px_4px_20px_-2px_rgba(0,0,0,0.05)] overflow-hidden flex flex-col justify-between hover:shadow-md transition-all duration-300">
                               <div className="relative h-44 overflow-hidden bg-slate-100">
-                                <img src={ad.image_url} alt="Campaign" className="w-full h-full object-cover" />
+                                <img src={ad.image_url} alt="Campaign" className="w-full h-full object-contain" />
                                 <span className="absolute bottom-3 right-3 bg-black/75 text-[8px] font-black text-white px-2 py-0.5 rounded tracking-wide uppercase select-none">Sponsored Offer</span>
                               </div>
                               <div className="p-5 flex flex-col gap-3">

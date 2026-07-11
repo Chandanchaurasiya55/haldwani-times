@@ -213,7 +213,33 @@ function ReporterDashboard({ onRefreshArticles }) {
                     </select>
                   </div>
                 </div>
-                <div className="flex flex-col gap-1"><label className="text-xs font-bold text-slate-600">Cover Image URL</label><input type="url" value={newImageUrl} onChange={(e) => setNewImageUrl(e.target.value)} placeholder="https://images.unsplash.com/..." className="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-blue-500 outline-none text-sm" /></div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold text-slate-600">Cover Image URL</label>
+                  <div className="flex gap-2">
+                    <input type="url" value={newImageUrl} onChange={(e) => setNewImageUrl(e.target.value)} placeholder="https://images.unsplash.com/..." className="flex-1 px-3 py-2.5 rounded-lg border border-slate-200 focus:border-blue-500 outline-none text-sm" />
+                    <input type="file" id="reporter-image-upload" accept="image/*" className="hidden" onChange={async (e) => {
+                      const file = e.target.files[0];
+                      if (!file) return;
+                      setErrorMsg(''); setSuccessMsg('Uploading image...');
+                      const formData = new FormData();
+                      formData.append('file', file);
+                      try {
+                        const res = await fetch(`${API_BASE_URL}/media/upload`, {
+                          method: 'POST',
+                          body: formData
+                        });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.message || 'Upload failed.');
+                        setNewImageUrl(data.url);
+                        setSuccessMsg('Cover image uploaded successfully!');
+                      } catch (err) {
+                        setSuccessMsg('');
+                        setErrorMsg('Image upload failed: ' + err.message);
+                      }
+                    }} />
+                    <label htmlFor="reporter-image-upload" className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase px-4 rounded-lg flex items-center justify-center cursor-pointer transition-colors shrink-0 select-none">Upload</label>
+                  </div>
+                </div>
                 <div className="flex flex-col gap-1"><label className="text-xs font-bold text-slate-600">Article Content</label><textarea rows="6" value={newContent} onChange={(e) => setNewContent(e.target.value)} required placeholder="Write your story..." className="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-blue-500 outline-none text-sm" /></div>
                 <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase py-2.5 px-5 rounded-lg self-start cursor-pointer transition-colors">Submit Draft →</button>
               </form>

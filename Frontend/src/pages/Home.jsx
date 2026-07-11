@@ -81,22 +81,17 @@ const AdPlaceholder = ({ id, size, type, description, className = "", adObject }
 
   if (imageUrl) {
     return (
-      <div className={`w-full flex justify-center py-2 select-none ${className}`}>
-        <a 
-          href={targetUrl || "#"} 
-          target={targetUrl ? "_blank" : undefined} 
-          rel="noopener noreferrer"
-          className="w-full relative overflow-hidden rounded-none border border-slate-100 flex items-center justify-center bg-slate-50 shadow-sm transition-all hover:opacity-95"
-          style={
-            isSidebar 
-              ? { maxWidth: '100%', height: id === 'AD 5' ? '750px' : '320px' } 
-              : { maxWidth: '100%', height: '160px' }
-          }
-        >
-          <img src={imageUrl} alt="Advertisement" className="w-full h-full object-cover" />
-          <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-sm text-[8px] text-white font-black px-1.5 py-0.5 rounded tracking-wide uppercase">Ad</span>
-        </a>
-      </div>
+      <a 
+        href={targetUrl || "#"} 
+        target={targetUrl ? "_blank" : undefined} 
+        rel="noopener noreferrer"
+        className={`block w-full select-none hover:opacity-95 ${className}`}
+      >
+        <div className="relative w-full overflow-hidden">
+          <img src={imageUrl} alt="Advertisement" className="w-full h-auto block" />
+          <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-sm text-[8px] text-white font-black px-1.5 py-0.5 rounded tracking-wide uppercase select-none">Ad</span>
+        </div>
+      </a>
     );
   }
   
