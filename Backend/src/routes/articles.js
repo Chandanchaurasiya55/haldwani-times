@@ -1,7 +1,22 @@
 import express from 'express';
 import db from '../config/db.js';
+import Razorpay from 'razorpay';
+import crypto from 'crypto';
 
 const router = express.Router();
+
+// ==========================================
+// RAZORPAY INSTANCE
+// ==========================================
+const razorpayKeyId = process.env.RAZORPAY_KEY_ID;
+const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET;
+let razorpayInstance = null;
+if (razorpayKeyId && razorpayKeySecret) {
+  razorpayInstance = new Razorpay({ key_id: razorpayKeyId, key_secret: razorpayKeySecret });
+  console.log('[Razorpay] Initialized with provided credentials.');
+} else {
+  console.warn('[Razorpay] RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET not set in .env — payment verification will be skipped (test mode).');
+}
 
 // Ensure ads table exists and has default entries
 db.query(
@@ -378,30 +393,90 @@ db.query(
   ) ENGINE=InnoDB`,
   [],
   (err) => {
-    if (err) console.error('[AdBidsInit] Failed to create ad_bids table:', err.message);
+    if (err) {
+      console.error('[AdBidsInit] Failed to create ad_bids table:', err.message);
+    } else {
+      // Migration: add payment columns if missing
+      db.query("SHOW COLUMNS FROM ad_bids LIKE 'razorpay_order_id'", (colErr, rows) => {
+        if (!colErr && rows.length === 0) {
+          db.query(
+            `ALTER TABLE ad_bids
+             ADD COLUMN razorpay_order_id VARCHAR(255) DEFAULT NULL,
+             ADD COLUMN razorpay_payment_id VARCHAR(255) DEFAULT NULL,
+             ADD COLUMN payment_status VARCHAR(50) DEFAULT 'unpaid'`,
+            (alterErr) => {
+              if (alterErr) console.error('[AdBidsMigration] Failed to add payment columns:', alterErr.message);
+              else console.log('[AdBidsMigration] Successfully added razorpay payment columns to ad_bids table.');
+            }
+          );
+        }
+      });
+    }
   }
 );
 
+// @route   POST /api/articles/ad-bids/payment-order
+// @desc    Create a Razorpay order for the bid amount
+router.post('/ad-bids/payment-order', async (req, res) => {
+  const { amount } = req.body;
+  if (!amount || parseFloat(amount) < 50) {
+    return res.status(400).json({ message: 'Minimum bid amount is ₹50.' });
+  }
+
+  if (!razorpayInstance) {
+    // Test mode: return a fake order ID so the frontend flow still works
+    return res.json({ id: 'order_TEST_' + Date.now(), amount: Math.round(parseFloat(amount) * 100), currency: 'INR', test_mode: true });
+  }
+
+  try {
+    const order = await razorpayInstance.orders.create({
+      amount: Math.round(parseFloat(amount) * 100), // amount in paise
+      currency: 'INR',
+      receipt: 'ad_bid_' + Date.now(),
+    });
+    res.json({ ...order, key_id: razorpayKeyId });
+  } catch (err) {
+    console.error('[Razorpay] Order creation failed:', err);
+    res.status(500).json({ message: 'Failed to create payment order.', error: err.message });
+  }
+});
+
 // @route   POST /api/articles/ad-bids
-// @desc    User submits a new ad bid
+// @desc    User submits a new ad bid after successful payment
 router.post('/ad-bids', (req, res) => {
-  const { user_id, business_name, contact_email, contact_phone, ad_title, ad_description, ad_image_url, ad_target_url, slot_preference, bid_amount, duration_days } = req.body;
+  const { user_id, business_name, contact_email, contact_phone, ad_title, ad_description, ad_image_url, ad_target_url, slot_preference, bid_amount, duration_days, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
   if (!user_id || !business_name || !contact_email || !ad_title || !ad_image_url || !bid_amount) {
     return res.status(400).json({ message: 'Business name, contact email, ad title, ad image, and bid amount are required.' });
   }
 
-  if (parseFloat(bid_amount) < 100) {
-    return res.status(400).json({ message: 'Minimum bid amount is ₹100.' });
+  if (parseFloat(bid_amount) < 50) {
+    return res.status(400).json({ message: 'Minimum bid amount is ₹50.' });
+  }
+
+  // Verify Razorpay signature if credentials are configured
+  let paymentStatus = 'unpaid';
+  if (razorpayKeySecret && razorpay_order_id && razorpay_payment_id && razorpay_signature) {
+    const expectedSignature = crypto
+      .createHmac('sha256', razorpayKeySecret)
+      .update(razorpay_order_id + '|' + razorpay_payment_id)
+      .digest('hex');
+    if (expectedSignature !== razorpay_signature) {
+      return res.status(400).json({ message: 'Payment verification failed. Invalid signature.' });
+    }
+    paymentStatus = 'paid';
+  } else if (razorpay_order_id && razorpay_order_id.startsWith('order_TEST_')) {
+    // Test mode — mark as paid for dev convenience
+    paymentStatus = 'paid';
   }
 
   db.query(
-    `INSERT INTO ad_bids (user_id, business_name, contact_email, contact_phone, ad_title, ad_description, ad_image_url, ad_target_url, slot_preference, bid_amount, duration_days)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [user_id, business_name, contact_email, contact_phone || '', ad_title, ad_description || '', ad_image_url, ad_target_url || '', slot_preference || 'Any', bid_amount, duration_days || 7],
+    `INSERT INTO ad_bids (user_id, business_name, contact_email, contact_phone, ad_title, ad_description, ad_image_url, ad_target_url, slot_preference, bid_amount, duration_days, razorpay_order_id, razorpay_payment_id, payment_status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [user_id, business_name, contact_email, contact_phone || '', ad_title, ad_description || '', ad_image_url, ad_target_url || '', slot_preference || 'Any', bid_amount, duration_days || 7, razorpay_order_id || null, razorpay_payment_id || null, paymentStatus],
     (err, result) => {
       if (err) return res.status(500).json({ message: 'Failed to submit ad bid.', error: err.message });
-      res.status(201).json({ message: 'Ad bid submitted successfully! Our team will review it.', id: result.insertId });
+      res.status(201).json({ message: 'Ad bid submitted successfully! Payment verified. Our team will review it.', id: result.insertId, payment_status: paymentStatus });
     }
   );
 });

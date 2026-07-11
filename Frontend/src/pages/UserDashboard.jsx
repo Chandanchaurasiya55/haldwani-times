@@ -28,6 +28,7 @@ function UserDashboard({ onRefreshArticles }) {
   const [bidAmount, setBidAmount] = useState('');
   const [bidDuration, setBidDuration] = useState(7);
   const [bidAgreedTerms, setBidAgreedTerms] = useState(false);
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('ht_user');
@@ -73,20 +74,94 @@ function UserDashboard({ onRefreshArticles }) {
     try { const res = await fetch(`${API_BASE_URL}/articles/bookmarks`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: currentUser.id, article_id: articleId }) }); if (res.ok) fetchMyBookmarks(); } catch (err) { console.error(err); }
   };
 
+  // Load Razorpay checkout script
+  useEffect(() => {
+    if (!document.getElementById('razorpay-checkout-script')) {
+      const script = document.createElement('script');
+      script.id = 'razorpay-checkout-script';
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      document.head.appendChild(script);
+    }
+  }, []);
+
   const handleSubmitBid = async (e) => {
     e.preventDefault(); setErrorMsg(''); setSuccessMsg('');
     if (!bidAgreedTerms) { setErrorMsg('You must agree to the Terms & Conditions before submitting.'); return; }
+    const amount = parseFloat(bidAmount);
+    if (!amount || amount < 50) { setErrorMsg('Minimum bid amount is ₹50.'); return; }
+
+    setPaymentProcessing(true);
+    try {
+      // Step 1: Create Razorpay order from backend
+      const orderRes = await fetch(`${API_BASE_URL}/articles/ad-bids/payment-order`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount })
+      });
+      const orderData = await orderRes.json();
+      if (!orderRes.ok) throw new Error(orderData.message || 'Failed to create payment order.');
+
+      // Step 2: If test mode (no Razorpay keys), skip checkout modal
+      if (orderData.test_mode) {
+        // Submit bid directly with test order ID
+        await submitBidToBackend(orderData.id, 'pay_TEST_' + Date.now(), '');
+        return;
+      }
+
+      // Step 3: Open Razorpay checkout popup
+      const options = {
+        key: orderData.key_id || 'rzp_test_placeholder',
+        amount: orderData.amount,
+        currency: orderData.currency || 'INR',
+        name: 'Haldwani Times',
+        description: `Ad Bid: ${bidAdTitle}`,
+        order_id: orderData.id,
+        handler: async function (response) {
+          // Step 4: Payment successful — submit bid with verification params
+          await submitBidToBackend(response.razorpay_order_id, response.razorpay_payment_id, response.razorpay_signature);
+        },
+        prefill: {
+          name: bidBusinessName,
+          email: bidContactEmail,
+          contact: bidContactPhone,
+        },
+        theme: { color: '#b80035' },
+        modal: {
+          ondismiss: function () {
+            setPaymentProcessing(false);
+            setErrorMsg('Payment was cancelled. Your bid has not been placed.');
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (response) {
+        setPaymentProcessing(false);
+        setErrorMsg(`Payment failed: ${response.error.description}`);
+      });
+      rzp.open();
+    } catch (err) {
+      setPaymentProcessing(false);
+      setErrorMsg(err.message);
+    }
+  };
+
+  const submitBidToBackend = async (razorpay_order_id, razorpay_payment_id, razorpay_signature) => {
     try {
       const res = await fetch(`${API_BASE_URL}/articles/ad-bids`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: currentUser.id, business_name: bidBusinessName, contact_email: bidContactEmail, contact_phone: bidContactPhone, ad_title: bidAdTitle, ad_description: bidAdDescription, ad_image_url: bidAdImageUrl, ad_target_url: bidAdTargetUrl, slot_preference: bidSlotPref, bid_amount: parseFloat(bidAmount), duration_days: bidDuration })
+        body: JSON.stringify({ user_id: currentUser.id, business_name: bidBusinessName, contact_email: bidContactEmail, contact_phone: bidContactPhone, ad_title: bidAdTitle, ad_description: bidAdDescription, ad_image_url: bidAdImageUrl, ad_target_url: bidAdTargetUrl, slot_preference: bidSlotPref, bid_amount: parseFloat(bidAmount), duration_days: bidDuration, razorpay_order_id, razorpay_payment_id, razorpay_signature })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to submit bid.');
-      setSuccessMsg('🎉 Ad bid submitted! Our team will review and the highest bidder gets priority placement.');
+      setSuccessMsg('🎉 Payment successful! Ad bid submitted. Our team will review and the highest bidder gets priority placement.');
       setBidBusinessName(''); setBidContactEmail(''); setBidContactPhone(''); setBidAdTitle(''); setBidAdDescription(''); setBidAdImageUrl(''); setBidAdTargetUrl(''); setBidSlotPref('Any'); setBidAmount(''); setBidDuration(7); setBidAgreedTerms(false);
       fetchMyBids();
-    } catch (err) { setErrorMsg(err.message); }
+    } catch (err) {
+      setErrorMsg(err.message);
+    } finally {
+      setPaymentProcessing(false);
+    }
   };
 
   const menuItems = [
@@ -278,7 +353,7 @@ function UserDashboard({ onRefreshArticles }) {
                         <option value="Any">Any Available</option><option value="AD 1">AD 1 - Top Banner</option><option value="AD 2">AD 2 - Below Header</option><option value="AD 3">AD 3 - Sidebar</option><option value="AD 4">AD 4 - Mid-Page</option><option value="AD 5">AD 5 - Half Page</option><option value="AD 6">AD 6 - Pre-Footer</option><option value="AD 7">AD 7 - Bottom</option>
                       </select>
                     </div>
-                    <div className="flex flex-col gap-1"><label className="text-xs font-bold text-slate-600">Bid Amount (₹) *</label><input type="number" required min="100" step="50" value={bidAmount} onChange={(e) => setBidAmount(e.target.value)} placeholder="Min ₹100" className="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-indigo-500 outline-none text-sm" /></div>
+                    <div className="flex flex-col gap-1"><label className="text-xs font-bold text-slate-600">Bid Amount (₹) *</label><input type="number" required min="50" step="50" value={bidAmount} onChange={(e) => setBidAmount(e.target.value)} placeholder="Min ₹50" className="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-indigo-500 outline-none text-sm" /></div>
                     <div className="flex flex-col gap-1"><label className="text-xs font-bold text-slate-600">Duration</label>
                       <select value={bidDuration} onChange={(e) => setBidDuration(parseInt(e.target.value))} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-indigo-500 outline-none text-sm font-medium bg-white cursor-pointer">
                         <option value={3}>3 Days</option><option value={7}>7 Days</option><option value={14}>14 Days</option><option value={30}>30 Days</option>
@@ -294,7 +369,9 @@ function UserDashboard({ onRefreshArticles }) {
                     </label>
                   </div>
 
-                  <button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase py-2.5 px-6 rounded-lg self-start cursor-pointer transition-colors mt-1">Submit Ad Bid →</button>
+                  <button type="submit" disabled={paymentProcessing} className={`${paymentProcessing ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 cursor-pointer'} text-white font-bold text-xs uppercase py-2.5 px-6 rounded-lg self-start transition-colors mt-1 flex items-center gap-2`}>
+                    {paymentProcessing ? (<><span className="material-symbols-outlined text-sm animate-spin">progress_activity</span><span>Processing Payment...</span></>) : (<><span className="material-symbols-outlined text-sm">payments</span><span>Pay & Submit Ad Bid →</span></>)}
+                  </button>
                 </form>
 
                 {/* Right sidebar - pricing info */}
@@ -302,7 +379,7 @@ function UserDashboard({ onRefreshArticles }) {
                   <div className="bg-white border border-slate-200 rounded-lg p-5 flex flex-col gap-3">
                     <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2"><span className="material-symbols-outlined text-sm text-amber-500">workspace_premium</span> Pricing Tiers</h4>
                     <div className="flex flex-col gap-2">
-                      <div className="flex justify-between items-center text-xs py-2 border-b border-slate-100"><span className="text-slate-600">Minimum Bid</span><span className="font-bold text-slate-800">₹100</span></div>
+                      <div className="flex justify-between items-center text-xs py-2 border-b border-slate-100"><span className="text-slate-600">Minimum Bid</span><span className="font-bold text-slate-800">₹50</span></div>
                       <div className="flex justify-between items-center text-xs py-2 border-b border-slate-100"><span className="text-slate-600">Standard (7 days)</span><span className="font-bold text-slate-800">₹500+</span></div>
                       <div className="flex justify-between items-center text-xs py-2 border-b border-slate-100"><span className="text-slate-600">Premium (14 days)</span><span className="font-bold text-slate-800">₹1,000+</span></div>
                       <div className="flex justify-between items-center text-xs py-2"><span className="text-slate-600">Enterprise (30 days)</span><span className="font-bold text-slate-800">₹2,500+</span></div>
