@@ -1,8 +1,5 @@
-import express from 'express';
 import crypto from 'crypto';
 import db from '../config/db.js';
-
-const router = express.Router();
 
 // Utility function to hash password with SHA-256
 function hashPassword(password) {
@@ -59,7 +56,6 @@ db.query(`CREATE TABLE IF NOT EXISTS bookmarks (
   if (err) console.error('[AuthInit] Failed to create bookmarks table:', err.message);
 });
 
-
 // Helper to check for username/email duplication in a specific table
 function checkTableDuplication(table, username, email, callback) {
   db.query(`SELECT * FROM ${table} WHERE username = ? OR email = ?`, [username, email], (err, rows) => {
@@ -69,9 +65,8 @@ function checkTableDuplication(table, username, email, callback) {
   });
 }
 
-// @route   POST /api/auth/register/admin
 // @desc    Register a new admin account
-router.post('/register/admin', (req, res) => {
+export const registerAdmin = (req, res) => {
   const { username, email, password } = req.body;
 
   if (!username || !email || !password) {
@@ -109,11 +104,10 @@ router.post('/register/admin', (req, res) => {
       }
     );
   });
-});
+};
 
-// @route   POST /api/auth/register/reporter
 // @desc    Register a new reporter account
-router.post('/register/reporter', (req, res) => {
+export const registerReporter = (req, res) => {
   const { username, email, password } = req.body;
 
   if (!username || !email || !password) {
@@ -152,11 +146,10 @@ router.post('/register/reporter', (req, res) => {
       }
     );
   });
-});
+};
 
-// @route   POST /api/auth/register/user
 // @desc    Register a new general user account (Reader)
-router.post('/register/user', (req, res) => {
+export const registerUser = (req, res) => {
   const { username, email, password } = req.body;
 
   if (!username || !email || !password) {
@@ -195,11 +188,10 @@ router.post('/register/user', (req, res) => {
       }
     );
   });
-});
+};
 
-// @route   POST /api/auth/login
 // @desc    Authenticate user (Reporter, Admin, or General User)
-router.post('/login', (req, res) => {
+export const login = (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -285,6 +277,4 @@ router.post('/login', (req, res) => {
       });
     });
   });
-});
-
-export default router;
+};

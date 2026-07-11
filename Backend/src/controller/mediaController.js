@@ -1,12 +1,8 @@
-import express from 'express';
-import multer from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import db from '../config/db.js';
-
-const router = express.Router();
 
 // Define __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -41,7 +37,7 @@ if (cloudName && cloudName.startsWith('cloudinary://')) {
 }
 
 // Check Cloudinary credentials
-const hasCloudinary = process.env.CLOUDINARY_URL || 
+export const hasCloudinary = process.env.CLOUDINARY_URL || 
                       (cloudName && 
                        process.env.CLOUDINARY_API_KEY && 
                        process.env.CLOUDINARY_API_SECRET);
@@ -64,24 +60,8 @@ if (hasCloudinary) {
   console.log('[Media] Cloudinary credentials missing or incomplete. Using Local storage fallback.');
 }
 
-// Multer Setup
-const storage = hasCloudinary 
-  ? multer.memoryStorage()
-  : multer.diskStorage({
-      destination: (req, file, cb) => {
-        cb(null, uploadsDir);
-      },
-      filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
-      }
-    });
-
-const upload = multer({ storage });
-
-// @route   POST /api/media/upload
 // @desc    Upload an image (Cloudinary or Local fallback)
-router.post('/upload', upload.single('file'), async (req, res) => {
+export const uploadMedia = async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded.' });
@@ -146,22 +126,20 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     console.error('[UploadError]:', error);
     res.status(500).json({ message: 'Image upload failed.', error: error.message });
   }
-});
+};
 
-// @route   GET /api/media
 // @desc    Get all uploaded media items
-router.get('/', (req, res) => {
+export const getAllMedia = (req, res) => {
   db.query('SELECT * FROM media_library ORDER BY created_at DESC', (err, rows) => {
     if (err) {
       return res.status(500).json({ message: 'Failed to retrieve media library.', error: err.message });
     }
     res.json(rows);
   });
-});
+};
 
-// @route   DELETE /api/media/:id
 // @desc    Delete media item
-router.delete('/:id', async (req, res) => {
+export const deleteMedia = async (req, res) => {
   const mediaId = req.params.id;
 
   db.query('SELECT * FROM media_library WHERE id = ?', [mediaId], async (err, rows) => {
@@ -199,6 +177,4 @@ router.delete('/:id', async (req, res) => {
       res.json({ message: 'Media item deleted successfully.' });
     });
   });
-});
-
-export default router;
+};

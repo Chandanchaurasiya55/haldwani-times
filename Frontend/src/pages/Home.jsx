@@ -1081,17 +1081,15 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
                       })}
                     </div>
 
-                    {remainingFeedArticles.length > visibleRemainingCount && (
-                      <div className="flex justify-center mt-4 select-none">
-                        <button 
-                          onClick={() => setVisibleRemainingCount(prev => prev + 6)}
-                          className="px-8 py-3 bg-white hover:bg-slate-50 text-primary border border-primary/20 rounded-full font-bold text-xs uppercase shadow-sm hover:shadow-md transition-all flex items-center gap-2 cursor-pointer animate-pulse hover:animate-none"
-                        >
-                          <span className="material-symbols-outlined text-sm font-black">expand_more</span>
-                          <span>और समाचार लोड करें (Show More)</span>
-                        </button>
-                      </div>
-                    )}
+                    <div className="flex justify-center mt-4 select-none">
+                      <button 
+                        onClick={() => setVisibleRemainingCount(prev => prev + 6)}
+                        className="px-8 py-3 bg-white hover:bg-slate-50 text-primary border border-primary/20 rounded-full font-bold text-xs uppercase shadow-sm hover:shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-sm font-black">expand_more</span>
+                        <span>और समाचार लोड करें (Show More)</span>
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1184,17 +1182,15 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
                       })}
                     </section>
                     
-                    {finalDisplayArticles.length > visibleCount && (
-                      <div className="flex justify-center mt-6 select-none">
-                        <button 
-                          onClick={() => setVisibleCount(prev => prev + 12)}
-                          className="px-8 py-3 bg-white hover:bg-slate-50 text-primary border border-primary/20 rounded-full font-bold text-xs uppercase shadow-sm hover:shadow-md transition-all flex items-center gap-2 cursor-pointer"
-                        >
-                          <span className="material-symbols-outlined text-sm font-black">expand_more</span>
-                          <span>और समाचार लोड करें (Load More)</span>
-                        </button>
-                      </div>
-                    )}
+                    <div className="flex justify-center mt-6 select-none">
+                      <button 
+                        onClick={() => setVisibleCount(prev => prev + 12)}
+                        className="px-8 py-3 bg-white hover:bg-slate-50 text-primary border border-primary/20 rounded-full font-bold text-xs uppercase shadow-sm hover:shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-sm font-black">expand_more</span>
+                        <span>और समाचार लोड करें (Load More)</span>
+                      </button>
+                    </div>
                   </div>
                 )}
 

@@ -101,24 +101,21 @@ function UserDashboard({ onRefreshArticles }) {
       const orderData = await orderRes.json();
       if (!orderRes.ok) throw new Error(orderData.message || 'Failed to create payment order.');
 
-      // Step 2: If test mode (no Razorpay keys), skip checkout modal
-      if (orderData.test_mode) {
-        // Submit bid directly with test order ID
-        await submitBidToBackend(orderData.id, 'pay_TEST_' + Date.now(), '');
-        return;
-      }
-
-      // Step 3: Open Razorpay checkout popup
+      // Step 2: Open Razorpay checkout popup (fallback to standard direct mode if test_mode is active)
+      const isTestMode = !!orderData.test_mode;
       const options = {
         key: orderData.key_id || 'rzp_test_placeholder',
         amount: orderData.amount,
         currency: orderData.currency || 'INR',
         name: 'Haldwani Times',
         description: `Ad Bid: ${bidAdTitle}`,
-        order_id: orderData.id,
         handler: async function (response) {
-          // Step 4: Payment successful — submit bid with verification params
-          await submitBidToBackend(response.razorpay_order_id, response.razorpay_payment_id, response.razorpay_signature);
+          // Step 3: Payment successful — submit bid with verification params
+          await submitBidToBackend(
+            response.razorpay_order_id || orderData.id,
+            response.razorpay_payment_id || 'pay_TEST_' + Date.now(),
+            response.razorpay_signature || ''
+          );
         },
         prefill: {
           name: bidBusinessName,
@@ -133,6 +130,10 @@ function UserDashboard({ onRefreshArticles }) {
           }
         }
       };
+
+      if (!isTestMode) {
+        options.order_id = orderData.id;
+      }
 
       const rzp = new window.Razorpay(options);
       rzp.on('payment.failed', function (response) {
@@ -360,6 +361,16 @@ function UserDashboard({ onRefreshArticles }) {
                       </select>
                     </div>
                   </div>
+
+                  {/* GST Checkout Summary */}
+                  {bidAmount && parseFloat(bidAmount) >= 50 && (
+                    <div className="text-xs text-slate-600 font-medium p-4 bg-slate-50 rounded-lg border border-slate-200/60 shadow-sm flex flex-col gap-1.5">
+                      <div className="flex justify-between"><span>Base Bid Amount:</span><span className="font-bold text-slate-800">₹{parseFloat(bidAmount).toFixed(2)}</span></div>
+                      <div className="flex justify-between text-slate-500"><span>GST (18%):</span><span className="font-bold text-slate-700">+ ₹{(parseFloat(bidAmount) * 0.18).toFixed(2)}</span></div>
+                      <div className="w-full h-px bg-slate-200 my-1"></div>
+                      <div className="flex justify-between font-extrabold text-sm text-indigo-600"><span>Total Payable Amount:</span><span>₹{(parseFloat(bidAmount) * 1.18).toFixed(2)}</span></div>
+                    </div>
+                  )}
 
                   {/* Terms checkbox */}
                   <div className="flex items-start gap-3 mt-2 p-3 bg-slate-50 rounded-lg border border-slate-100">

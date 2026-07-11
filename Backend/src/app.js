@@ -1,9 +1,9 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import authRoutes from './routes/auth.js';
-import articleRoutes from './routes/articles.js';
-import mediaRoutes from './routes/media.js';
+import authRoutes from './routes/auth.route.js';
+import articleRoutes from './routes/articles.route.js';
+import mediaRoutes from './routes/media.route.js';
 import { performNewsSync } from './services/newsSync.js';
 
 const app = express();
