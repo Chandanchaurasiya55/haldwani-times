@@ -1067,7 +1067,7 @@ function Dashboard({ onClose, onRefreshArticles }) {
                           
                           <div className="flex flex-col gap-1.5">
                             <label className="text-xs font-bold text-slate-600 select-none">Ad Placement Slot</label>
-                            <select 
+                             <select 
                               value={selectedAdSlot}
                               onChange={(e) => setSelectedAdSlot(e.target.value)}
                               className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary focus:ring-2 focus:ring-primary/20 focus:outline-none text-sm bg-white font-bold transition-all cursor-pointer"
@@ -1079,6 +1079,7 @@ function Dashboard({ onClose, onRefreshArticles }) {
                               <option value="AD 5">AD 5 - 300x600 Half Page Ad (News Sidebar)</option>
                               <option value="AD 6">AD 6 - 728x90 Horizontal Banner (Pre-Footer)</option>
                               <option value="AD 7">AD 7 - 728x90 Horizontal Banner (Last Ad)</option>
+                              <option value="AD_DETAIL">AD_DETAIL - 1200x160 In-Article Banner (Detail Page)</option>
                             </select>
                           </div>
 

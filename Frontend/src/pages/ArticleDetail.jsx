@@ -3,44 +3,6 @@ import { parseLiveTitle } from '../utils/liveUtils';
 
 const API_BASE_URL = 'http://localhost:5000/api';
 
-const DetailAdPlaceholder = ({ slotId, size, type, description, className = "", adsList }) => {
-  const ad = adsList?.find(a => a.slot_id === slotId);
-  const imageUrl = ad?.image_url;
-  const targetUrl = ad?.target_url;
-
-  if (imageUrl) {
-    return (
-      <a 
-        href={targetUrl || "#"} 
-        target={targetUrl ? "_blank" : undefined} 
-        rel="noopener noreferrer"
-        className={`block w-full select-none hover:opacity-95 ${className}`}
-      >
-        <div className="relative w-full overflow-hidden">
-          <img src={imageUrl} alt="Advertisement" className="w-full h-auto block" />
-          <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-sm text-[8px] text-white font-black px-1.5 py-0.5 rounded tracking-wide uppercase select-none">Ad</span>
-        </div>
-      </a>
-    );
-  }
-
-  return (
-    <div className={`w-full flex justify-center py-2 select-none ${className}`}>
-      <div 
-        className="w-full bg-[#f8fafc] border border-dashed border-slate-200 rounded-none flex flex-col items-center justify-center p-3 relative shadow-sm text-center"
-        style={{ maxWidth: '100%', height: '160px' }}
-      >
-        <span className="bg-[#b80035] text-white text-[8px] md:text-[9px] font-black px-2 py-0.5 rounded-full absolute -top-2 left-6 uppercase tracking-widest shadow-sm">
-          {slotId}
-        </span>
-        <h4 className="text-slate-800 font-extrabold text-[11px] md:text-xs tracking-tight">{size}</h4>
-        <span className="text-[9px] text-[#b80035]/80 font-bold uppercase tracking-wider">{type}</span>
-        <span className="text-[8px] text-slate-400 font-medium max-w-[90%] leading-normal">{description}</span>
-      </div>
-    </div>
-  );
-};
-
 const GoogleAdPlaceholder = ({ className = "" }) => {
   return (
     <div className={`w-full flex justify-center py-2 select-none ${className}`}>
@@ -56,6 +18,30 @@ const GoogleAdPlaceholder = ({ className = "" }) => {
       </div>
     </div>
   );
+};
+
+const DetailAdPlaceholder = ({ slotId, size, type, description, className = "", adsList }) => {
+  const ad = adsList?.find(a => a.slot_id === slotId);
+  const imageUrl = ad?.image_url;
+  const targetUrl = ad?.target_url;
+
+  if (imageUrl) {
+    return (
+      <a 
+        href={targetUrl || "#"} 
+        target={targetUrl ? "_blank" : undefined} 
+        rel="noopener noreferrer"
+        className={`block w-full select-none hover:opacity-95 ${className}`}
+      >
+        <div className="relative w-full overflow-hidden flex justify-center bg-transparent" style={{ maxHeight: '160px' }}>
+          <img src={imageUrl} alt="Advertisement" className="max-w-full max-h-full object-contain block" />
+          <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-sm text-[8px] text-white font-black px-1.5 py-0.5 rounded tracking-wide uppercase select-none">Ad</span>
+        </div>
+      </a>
+    );
+  }
+
+  return <GoogleAdPlaceholder className={className} />;
 };
 
 function ArticleDetail({ article: rawArticle, onClose, onSelectArticle, allArticles }) {
@@ -602,8 +588,15 @@ function ArticleDetail({ article: rawArticle, onClose, onSelectArticle, allArtic
             <span className="px-4 py-2 bg-surface-container-low rounded-full font-label-caps text-label-caps text-on-surface-variant border border-outline-variant/30 hover:bg-surface-container-high cursor-pointer transition-colors">#NEWS</span>
           </div>
 
-          {/* Google Adsense Space */}
-          <GoogleAdPlaceholder className="mt-8 border-t border-outline-variant/10 pt-8" />
+          {/* In-Article Advertisement Space */}
+          <DetailAdPlaceholder 
+            slotId="AD_DETAIL" 
+            size="1200x160 - In-Article Banner" 
+            type="IN-ARTICLE AD" 
+            description="Premium banner inside article details" 
+            className="mt-8 border-t border-outline-variant/10 pt-8" 
+            adsList={adsList} 
+          />
 
           {/* Attribution Notice */}
           {article.sourceName && (

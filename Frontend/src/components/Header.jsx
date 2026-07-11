@@ -39,7 +39,7 @@ function Header({ onNavigate, onSelectCategory, selectedCategory, onSearch, sear
 
         {/* Row 1: Top Bar — hidden when scrolled */}
         <div className={`border-b border-outline-variant/20 shadow-sm transition-all duration-300 ${isScrolled ? 'max-h-0 opacity-0 overflow-hidden border-none' : 'max-h-24 opacity-100'}`}>
-          <div className="max-w-[1440px] mx-auto flex justify-between items-center px-4 md:px-12 h-20 relative bg-white">
+          <div className="max-w-[1440px] mx-auto h-[100px] flex justify-between items-center px-4 md:px-12 relative bg-white">
 
             {/* Left: Menu & Search */}
             <div className="flex items-center gap-3 md:gap-6">
@@ -65,7 +65,7 @@ function Header({ onNavigate, onSelectCategory, selectedCategory, onSearch, sear
             {/* Center: Logo */}
             <div className="flex items-center justify-center absolute left-1/2 -translate-x-1/2 z-10 pointer-events-auto">
               <a href="#" onClick={(e) => { e.preventDefault(); onNavigate && onNavigate('home'); }} className="hover:opacity-90 transition-all text-center flex flex-col items-center select-none">
-                <img src="/logo.png" alt="Haldwani Times Logo" className="h-10 sm:h-12 md:h-14 w-auto object-contain" />
+                <img src="/logo.png" alt="Haldwani Times Logo" className="h-16 sm:h-22 md:h-26 w-auto object-contain" />
               </a>
             </div>
 
@@ -154,7 +154,7 @@ function Header({ onNavigate, onSelectCategory, selectedCategory, onSearch, sear
         </div>
 
         {/* Row 2: Categories Nav — horizontally scrollable on mobile */}
-        <div className={`bg-white border-b border-outline-variant/20 shadow-sm transition-all duration-300 ${isScrolled ? 'shadow-md bg-white/95 backdrop-blur-md' : ''}`}>
+        <div className={`transition-all duration-300 ${isScrolled ? 'shadow-md bg-white/95 backdrop-blur-md border-b border-outline-variant/20' : 'bg-slate-50 border-y border-outline-variant/20'}`}>
           <div className="max-w-[1440px] mx-auto px-4 md:px-12 py-2.5 md:py-3 flex items-center w-full">
 
             {/* Scrolled Logo */}
@@ -163,7 +163,7 @@ function Header({ onNavigate, onSelectCategory, selectedCategory, onSearch, sear
               onClick={(e) => { e.preventDefault(); onNavigate && onNavigate('home'); }}
               className={`transition-all duration-300 select-none shrink-0 ${isScrolled ? 'opacity-100 w-auto mr-6' : 'opacity-0 w-0 overflow-hidden pointer-events-none'}`}
             >
-              <img src="/logo.png" alt="Haldwani Times Logo" className="h-7 w-auto object-contain" />
+              <img src="/logo.png" alt="Haldwani Times Logo" className="h-11 md:h-13 w-auto object-contain" />
             </a>
 
             {/* Scrollable nav */}

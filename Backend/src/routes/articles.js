@@ -29,7 +29,7 @@ db.query(
       });
 
       const slots = [
-        { slot: 'AD 1' }, { slot: 'AD 2' }, { slot: 'AD 3' }, { slot: 'AD 4' }, { slot: 'AD 5' }, { slot: 'AD 6' }, { slot: 'AD 7' },
+        { slot: 'AD 1' }, { slot: 'AD 2' }, { slot: 'AD 3' }, { slot: 'AD 4' }, { slot: 'AD 5' }, { slot: 'AD 6' }, { slot: 'AD 7' }, { slot: 'AD_DETAIL' },
         {
           slot: 'SLIDER 1',
           url: 'https://images.unsplash.com/photo-1540553016722-983e48a2cd10?auto=format&fit=crop&w=1200&h=300&q=80',

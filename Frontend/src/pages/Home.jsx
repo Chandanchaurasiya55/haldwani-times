@@ -80,6 +80,17 @@ const AdPlaceholder = ({ id, size, type, description, className = "", adObject }
   const targetUrl = adObject?.target_url;
 
   if (imageUrl) {
+    const isSidebar = id === 'AD 3' || id === 'AD 5';
+    const isAD1 = id === 'AD 1';
+    let heightStyle = {};
+    if (isSidebar) {
+      heightStyle = { maxHeight: id === 'AD 5' ? '750px' : '320px' };
+    } else if (isAD1) {
+      heightStyle = { maxHeight: '180px' }; // Proper height for top banner ad to prevent cropping
+    } else {
+      heightStyle = { maxHeight: '120px' };
+    }
+
     return (
       <a 
         href={targetUrl || "#"} 
@@ -87,8 +98,12 @@ const AdPlaceholder = ({ id, size, type, description, className = "", adObject }
         rel="noopener noreferrer"
         className={`block w-full select-none hover:opacity-95 ${className}`}
       >
-        <div className="relative w-full overflow-hidden">
-          <img src={imageUrl} alt="Advertisement" className="w-full h-auto block" />
+        <div className="relative w-full overflow-hidden flex justify-center bg-transparent" style={heightStyle}>
+          <img 
+            src={imageUrl} 
+            alt="Advertisement" 
+            className="max-w-full max-h-full object-contain block" 
+          />
           <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-sm text-[8px] text-white font-black px-1.5 py-0.5 rounded tracking-wide uppercase select-none">Ad</span>
         </div>
       </a>
@@ -619,7 +634,7 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
     <div className="w-full pt-[148px] pb-10 flex flex-col gap-6 md:gap-10">
 
       {/* AD 1: 1200x160 Leaderboard Ad */}
-      <div className="w-full max-w-[1440px] mx-auto px-4 md:px-12">
+      <div className="w-full max-w-[1440px] mx-auto px-4 md:px-12 mt-6">
         <AdPlaceholder 
           id="AD 1" 
           size="1200x160 - Leaderboard Ad" 

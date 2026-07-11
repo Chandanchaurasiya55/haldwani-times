@@ -459,6 +459,7 @@ function AdminDashboard({ onRefreshArticles }) {
                       <option value="AD 5">AD 5 - Half Page Tall Sidebar (Recommended: 350x750)</option>
                       <option value="AD 6">AD 6 - Pre-Footer Banner (Recommended: 1200x160)</option>
                       <option value="AD 7">AD 7 - Last Ad Banner (Recommended: 1200x160)</option>
+                      <option value="AD_DETAIL">AD_DETAIL - Article Detail Page (Recommended: 1200x160)</option>
                       <option value="SLIDER 1">SLIDER 1 - Home Banner Slide 1 (Recommended: 1200x300)</option>
                       <option value="SLIDER 2">SLIDER 2 - Home Banner Slide 2 (Recommended: 1200x300)</option>
                       <option value="SLIDER 3">SLIDER 3 - Home Banner Slide 3 (Recommended: 1200x300)</option>
