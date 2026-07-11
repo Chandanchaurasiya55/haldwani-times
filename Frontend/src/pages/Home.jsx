@@ -75,7 +75,7 @@ const categoryPlaceholders = {
 };
 
 const AdPlaceholder = ({ id, size, type, description, className = "", adObject }) => {
-  const isSidebar = size.includes('300x250') || size.includes('300x600');
+  const isSidebar = id === 'AD 3' || id === 'AD 5';
   const imageUrl = adObject?.image_url;
   const targetUrl = adObject?.target_url;
 
@@ -89,11 +89,11 @@ const AdPlaceholder = ({ id, size, type, description, className = "", adObject }
           className="w-full relative overflow-hidden rounded-none border border-slate-100 flex items-center justify-center bg-slate-50 shadow-sm transition-all hover:opacity-95"
           style={
             isSidebar 
-              ? { maxWidth: '100%', height: size.includes('300x600') ? '650px' : '320px' } 
+              ? { maxWidth: '100%', height: id === 'AD 5' ? '750px' : '320px' } 
               : { maxWidth: '100%', height: '160px' }
           }
         >
-          <img src={imageUrl} alt="Advertisement" className="max-w-full max-h-full object-contain" />
+          <img src={imageUrl} alt="Advertisement" className="w-full h-full object-cover" />
           <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-sm text-[8px] text-white font-black px-1.5 py-0.5 rounded tracking-wide uppercase">Ad</span>
         </a>
       </div>
@@ -104,11 +104,11 @@ const AdPlaceholder = ({ id, size, type, description, className = "", adObject }
     <div className={`w-full flex justify-center py-2 select-none ${className}`}>
       <div 
         className={`w-full bg-[#f8fafc] border border-dashed border-slate-200 rounded-none flex flex-col items-center justify-center p-3 relative shadow-sm text-center ${
-          isSidebar ? 'min-h-[320px]' : 'min-h-[160px]'
+          isSidebar ? (id === 'AD 5' ? 'min-h-[750px]' : 'min-h-[320px]') : 'min-h-[160px]'
         }`}
         style={
           isSidebar 
-            ? { maxWidth: '100%', height: size.includes('300x600') ? '650px' : '320px' } 
+            ? { maxWidth: '100%', height: id === 'AD 5' ? '750px' : '320px' } 
             : { maxWidth: '100%', height: '160px' }
         }
       >
@@ -623,11 +623,11 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
   return (
     <div className="w-full pt-[148px] pb-10 flex flex-col gap-6 md:gap-10">
 
-      {/* AD 1: 728x90 Leaderboard Ad */}
+      {/* AD 1: 1200x160 Leaderboard Ad */}
       <div className="w-full max-w-[1440px] mx-auto px-4 md:px-12">
         <AdPlaceholder 
           id="AD 1" 
-          size="728x90 - Leaderboard Ad" 
+          size="1200x160 - Leaderboard Ad" 
           type="TOP BANNER AD (Leaderboard)" 
           description="Best for brand visibility" 
           adObject={getAdBySlot('AD 1')}
@@ -820,7 +820,7 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
                 })()}
 
                 {/* AD 2: Below Featured */}
-                <AdPlaceholder id="AD 2" size="728x90 - Horizontal Ad" type="BELOW HEADER AD" description="Good for mid-page visibility" adObject={getAdBySlot('AD 2')} />
+                <AdPlaceholder id="AD 2" size="1200x160 - Horizontal Ad" type="BELOW HEADER AD" description="Good for mid-page visibility" adObject={getAdBySlot('AD 2')} />
 
                 {/* Two-Column Section: Main story + AD 3 */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
@@ -868,12 +868,12 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
 
                   {/* Right: AD 3 */}
                   <div className="flex justify-center items-center h-full">
-                    <AdPlaceholder id="AD 3" size="300x250 - Medium Rectangle" type="SIDEBAR AD" description="High visibility on desktop" adObject={getAdBySlot('AD 3')} />
+                    <AdPlaceholder id="AD 3" size="350x320 - Medium Rectangle" type="SIDEBAR AD" description="High visibility on desktop" adObject={getAdBySlot('AD 3')} />
                   </div>
                 </div>
 
                 {/* AD 4 */}
-                <AdPlaceholder id="AD 4" size="728x90 - Horizontal Banner" type="BETWEEN SECTIONS AD" description="Good CTR, Between content sections" adObject={getAdBySlot('AD 4')} />
+                <AdPlaceholder id="AD 4" size="1200x160 - Horizontal Banner" type="BETWEEN SECTIONS AD" description="Good CTR, Between content sections" adObject={getAdBySlot('AD 4')} />
 
                 {/* Section with Grid & AD 5 Sidebar */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
@@ -969,12 +969,12 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
 
                   {/* Right: AD 5 */}
                   <div className="lg:col-span-1 flex justify-center items-start lg:sticky lg:top-24 h-full">
-                    <AdPlaceholder id="AD 5" size="300x600 - Half Page Ad" type="HALF PAGE AD" description="Best for brand campaigns" adObject={getAdBySlot('AD 5')} />
+                    <AdPlaceholder id="AD 5" size="350x650 - Half Page Ad" type="HALF PAGE AD" description="Best for brand campaigns" adObject={getAdBySlot('AD 5')} />
                   </div>
                 </div>
 
                 {/* AD 6: Before Footer Ad */}
-                <AdPlaceholder id="AD 6" size="728x90 - Horizontal Banner" type="BEFORE FOOTER AD" description="Capture attention before footer" adObject={getAdBySlot('AD 6')} />
+                <AdPlaceholder id="AD 6" size="1200x160 - Horizontal Banner" type="BEFORE FOOTER AD" description="Capture attention before footer" adObject={getAdBySlot('AD 6')} />
 
                 {/* Entertainment World Section */}
                 {entertainmentArticles.length > 0 && (
@@ -1024,7 +1024,7 @@ function Home({ articles: rawArticles = [], isLoading: isFetchLoading = false, s
                 )}
 
                 {/* AD 7: Last Content Ad */}
-                <AdPlaceholder id="AD 7" size="728x90 - Horizontal Banner" type="LAST CONTENT AD" description="Increase page RPM" adObject={getAdBySlot('AD 7')} />
+                <AdPlaceholder id="AD 7" size="1200x160 - Horizontal Banner" type="LAST CONTENT AD" description="Increase page RPM" adObject={getAdBySlot('AD 7')} />
 
                 {/* NEW: More Stories / Latest Feed Section for Default Homepage */}
                 {remainingFeedArticles.length > 0 && (

@@ -18,7 +18,7 @@ const DetailAdPlaceholder = ({ slotId, size, type, description, className = "", 
           className="w-full relative overflow-hidden rounded-none border border-slate-100 flex items-center justify-center bg-slate-50 shadow-sm transition-all hover:opacity-95"
           style={{ maxWidth: '100%', height: '140px' }}
         >
-          <img src={imageUrl} alt="Advertisement" className="max-w-full max-h-full object-contain" />
+          <img src={imageUrl} alt="Advertisement" className="w-full h-full object-cover" />
           <span className="absolute bottom-2 right-2 bg-black/75 backdrop-blur-sm text-[8px] text-white font-black px-1.5 py-0.5 rounded tracking-wide uppercase">Ad</span>
         </a>
       </div>

@@ -452,16 +452,16 @@ function AdminDashboard({ onRefreshArticles }) {
                 <form onSubmit={handleUpdateAd} className="lg:col-span-2 bg-white border border-slate-200 rounded-lg p-6 flex flex-col gap-4">
                   <div className="flex flex-col gap-1"><label className="text-xs font-bold text-slate-600">Ad Slot</label>
                     <select value={selectedAdSlot} onChange={(e) => setSelectedAdSlot(e.target.value)} className="w-full px-3 py-2.5 rounded-lg border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm font-medium bg-white cursor-pointer">
-                      <option value="AD 1">AD 1 - 728x90 Leaderboard (Top)</option>
-                      <option value="AD 2">AD 2 - 728x90 Below Header</option>
-                      <option value="AD 3">AD 3 - 300x250 Sidebar</option>
-                      <option value="AD 4">AD 4 - 728x90 Mid-Page</option>
-                      <option value="AD 5">AD 5 - 300x600 Half Page</option>
-                      <option value="AD 6">AD 6 - 728x90 Pre-Footer</option>
-                      <option value="AD 7">AD 7 - 728x90 Last Ad</option>
-                      <option value="SLIDER 1">SLIDER 1 - Home Banner Slide 1 (1200x300)</option>
-                      <option value="SLIDER 2">SLIDER 2 - Home Banner Slide 2 (1200x300)</option>
-                      <option value="SLIDER 3">SLIDER 3 - Home Banner Slide 3 (1200x300)</option>
+                      <option value="AD 1">AD 1 - Leaderboard Top (Recommended: 1200x160)</option>
+                      <option value="AD 2">AD 2 - Below Header (Recommended: 1200x160)</option>
+                      <option value="AD 3">AD 3 - Sidebar Banner (Recommended: 350x320)</option>
+                      <option value="AD 4">AD 4 - Mid-Page Banner (Recommended: 1200x160)</option>
+                      <option value="AD 5">AD 5 - Half Page Tall Sidebar (Recommended: 350x750)</option>
+                      <option value="AD 6">AD 6 - Pre-Footer Banner (Recommended: 1200x160)</option>
+                      <option value="AD 7">AD 7 - Last Ad Banner (Recommended: 1200x160)</option>
+                      <option value="SLIDER 1">SLIDER 1 - Home Banner Slide 1 (Recommended: 1200x300)</option>
+                      <option value="SLIDER 2">SLIDER 2 - Home Banner Slide 2 (Recommended: 1200x300)</option>
+                      <option value="SLIDER 3">SLIDER 3 - Home Banner Slide 3 (Recommended: 1200x300)</option>
                     </select>
                   </div>
                   {selectedAdSlot.startsWith('SLIDER') && (
@@ -490,7 +490,7 @@ function AdminDashboard({ onRefreshArticles }) {
                   <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Live Preview</h4>
                   <div className="text-xs text-slate-500 pb-2 border-b border-slate-100 flex justify-between">
                     <span className="font-bold text-slate-800">{selectedAdSlot}</span>
-                    <span>{selectedAdSlot.startsWith('SLIDER') ? '1200x300' : selectedAdSlot === 'AD 3' ? '300x250' : selectedAdSlot === 'AD 5' ? '300x600' : '728x90'}</span>
+                    <span>{selectedAdSlot.startsWith('SLIDER') ? '1200x300' : selectedAdSlot === 'AD 3' ? '350x320' : selectedAdSlot === 'AD 5' ? '350x750' : '1200x160'}</span>
                   </div>
                   {adImageUrl ? (
                     <div className="rounded-lg overflow-hidden border border-slate-100 relative flex flex-col justify-end" style={{height: selectedAdSlot.startsWith('SLIDER') ? '130px' : selectedAdSlot === 'AD 5' ? '200px' : selectedAdSlot === 'AD 3' ? '150px' : '70px'}}>
