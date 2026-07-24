@@ -7,7 +7,7 @@ import UserDashboard from './pages/UserDashboard';
 import ArticleDetail from './pages/ArticleDetail';
 import Footer from './components/Footer';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'http://localhost:3000/api';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home'); // 'home' or 'dashboard'
